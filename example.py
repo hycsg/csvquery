@@ -1,8 +1,5 @@
 import super_csv
 
-dataset = super_csv.open_csv("example_data/coronavirus_data.csv")
-usa_date_range()
-
 def usa_date_range():
     dataset.index("location", lambda a,b: a<b)
     result = dataset.query({
@@ -25,3 +22,6 @@ def more_than_10000_cases():
         }
     })
     result.print_data()
+
+dataset = super_csv.open_csv("example_data/coronavirus_data.csv")
+usa_date_range()
