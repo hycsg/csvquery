@@ -1,3 +1,5 @@
+import sys
+
 class Dataset:
     def __init__(self):
         self.data = []
@@ -29,6 +31,7 @@ class Dataset:
 
             return i+1
         
+        sys.setrecursionlimit(10000)
         quick_sort(self.column_names.index(column_name), 0, len(self.data)-1, comparison)
 
     def query_one(self, query_object):
@@ -65,4 +68,4 @@ dataset = open_csv("example_data/coronavirus_data.csv")
 #dataset.index("location", lambda a, b: a < b)
 #dataset.index("date", lambda a, b: a < b)
 dataset.index("total_cases")
-#dataset.print_data()
+dataset.print_data()
