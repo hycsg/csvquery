@@ -82,10 +82,13 @@ The general structure of a **filter_object** is as follows:
     }
 }
 ```
+
+
 **Valid Operators**
  - **eq**: equals (cannot be combined with **lt** or **gt**)
  - **lt**: less than (can be combined with **gt**)
  - **gt**: greater than (can be combined with **lt**)
+
 
 **NOTE:** If you want to use a non-**eq** operator in a filter that uses a column that was not indexed, you need to provide a comparison operator like so:
 ```python
