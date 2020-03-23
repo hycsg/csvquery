@@ -1,4 +1,5 @@
 # Super CSV
+
 A python library that allows you to use NoSQL-style queries on CSV files.
 
 ## Downloading
