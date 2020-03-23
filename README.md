@@ -4,7 +4,7 @@ A python library that allows you to use NoSQL-style queries on CSV files.
 
 ## Downloading
 
-Just download **super_csv.py**.
+Download **super_csv.py** and add it to your project folder (WIP).
 
 ## Usage
 
@@ -40,7 +40,7 @@ dataset.index("name", lambda a, b: a < b) # alphabetical string comparisons are 
 
 ### Queries
 
-Use **Dataset.query(filter_object)** to fetch certain rows of your data that pass through specified filters:
+Use **Dataset.query(filter_object)** to fetch rows of data that pass through specified filters:
 ```python
 import super_csv
 
@@ -56,14 +56,22 @@ voter_dataset = dataset.query({
     }
 })
 ```
+Since **Dataset.query(filter_object)** returns another **Dataset**, you can query the resulting dataset as well:
+```python
+voters_named_john = voter_dataset.query({
+    "name": {
+        "eq": "John"
+    }
+})
+```
 The general structure of a **filter_object** is as follows:
 ```python
 {
     "column_name_1": {
-        "operation_1": "value_1",
-        "operation_2": "value_2",
+        "operator_1": "value_1",
+        "operator_2": "value_2",
         ...
-        "operation_N": "value_N"
+        "operator_N": "value_N"
     },
     "column_name_2": {
         ...
@@ -74,11 +82,40 @@ The general structure of a **filter_object** is as follows:
     }
 }
 ```
+**Valid Operators**
+ - **eq**: equals (cannot be combined with **lt** or **gt**)
+ - **lt**: less than (can be combined with **gt**)
+ - **gt**: greater than (can be combined with **lt**)
 
-### Output
+**NOTE:** If you want to use a non-**eq** operator in a filter that uses a column that was not indexed, you need to provide a comparison operator like so:
+```python
+import super_csv
+
+dataset = super_csv.open_csv("people.csv")
+dataset.index("citizenship") # sorts people by citizenship
+
+voter_dataset = dataset.query({
+    "citizenship": { # binary search
+        "eq": "USA"
+    },
+    "age" {  # not a binary search
+        "gt": "17"
+        "comparison": lambda a, b: int(a) < int(b) # you must provide a comparison lambda that returns true if argument 1 is less than argument 2
+    }
+})
+```
+
+### Outputing Data
 
 Finally, use **Dataset.print_data()** to output your new data to the console:
 ```python
 voter_dataset.print_data()
 ```
-More output options coming soon.
+Or, to access the data as a multidimensional array, just access the **data** attribute of the **Dataset** object:
+```python
+for row in voter_dataset.data:
+    print(row[0])
+    ...
+```
+
+More output options are coming soon.
