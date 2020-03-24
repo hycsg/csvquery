@@ -46,6 +46,11 @@ class Dataset:
         self.indexed_column = ""
         self.indexed_comparison = Comparisons.default
     
+    def already_indexed(self, column_name, comparison = Comparisons.default):
+        self.indexed_column = column_name
+        self.indexed_comparison = comparison
+        return self
+    
     def index(self, column_name, comparison = Comparisons.default):
         if not column_name in self.column_names:
             error_message("column '{0}' does not exist, skipping index".format(column_name))
@@ -270,6 +275,8 @@ class Dataset:
         for row in self.data:
             print_row(row, False)
         print()
+
+        return self
     
     def save_csv(self, filepath, delimiter=",", columns=None):
         if columns == None:
@@ -291,6 +298,8 @@ class Dataset:
                 else:
                     print(row[i], file=csv_file, end=delimiter)
         csv_file.close()
+
+        return self
 
 
 def open_csv(filepath, delimiter=","):

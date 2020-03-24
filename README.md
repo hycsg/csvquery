@@ -14,39 +14,54 @@ pip install csvquery
 
 Use **open_csv(path)** to produce a **Dataset** from a CSV file:
 ```python
-import csvquery
+from csvquery import open_csv
 
-dataset = csvquery.open_csv("path/to/file.csv")
+dataset = open_csv("path/to/file.csv")
 ```
 
 ### Indexing
 
 Once you have a dataset, use **Dataset.index(column_name[, comparison_operation])** to sort the rows of data based on the values in a specified column. Sorting the data is optional, but doing so allows you to do binary searches which have a time complexity of just **O(log(n))**.
 ```python
-import csvquery
+from csvquery import open_csv
 
-dataset = csvquery.open_csv("people.csv")
+dataset = open_csv("people.csv")
 dataset.index("age") # sorts people by ascending age
 ```
-The default comparison operation used to sort the data is:
+The default comparison operation used to sort the data is a float comparison. You can import the **csvquery.Comparisons** class to use other common comparison operations:
 ```python
-lambda a, b: float(a) < float(b)
-```
-You can also specify a custom comparison operation to, for example, sort things alphabetically:
-```python
-import csvquery
+from csvquery import open_csv, Comparisons
 
-dataset = csvquery.open_csv("people.csv")
-dataset.index("name", lambda a, b: a < b) # alphabetical string comparisons are built-in in Python
+dataset = open_csv("people.csv")
+dataset.index("name", Comparisons.strings)
+```
+```python
+Comparisons.integers    >> lambda a, b: int(a) < int(b)
+Comparisons.floats      >> lambda a, b: float(a) < float(b)
+Comparisons.strings     >> lambda a, b: a < b
+```
+The **csvquery.Comparisons** class also has a static method called **get_date_comparison(format_string)** which returns a custom date comparison function based on the specified format that you can pass as the comparison operation:
+```python
+from csvquery import open_csv, Comparisons
+
+dataset = open_csv("people.csv")
+data.index("date_of_birth", Comparisons.get_date_comparison("YYYY-MM-DD"))
+```
+You can also specify your own custom comparison operation:
+```python
+from csvquery import open_csv
+
+dataset = open_csv("people.csv")
+dataset.index("name", lambda a, b: a**2 < b**2)
 ```
 
 ### Queries
 
 Use **Dataset.query(filter_object)** to fetch rows of data that pass through specified filters:
 ```python
-import csvquery
+from csvquery import open_csv
 
-dataset = csvquery.open_csv("people.csv")
+dataset = open_csv("people.csv")
 dataset.index("age")
 
 voter_dataset = dataset.query({
@@ -68,9 +83,11 @@ voters_named_john = voter_dataset.query({
 ```
 You can also use the **csvquery.Operators** class instead of operator strings:
 ```python
+from csvquery import Operators
+
 voters_named_john = voter_dataset.query({
     "name": {
-        csvquery.Operators.equal : "John"
+        Operators.equal : "John"
     }
 })
 ```
@@ -78,24 +95,22 @@ The general structure of a **filter_object** is as follows:
 ```python
 {
     "column_name_1": {
-        "operator_1": "value_1",
-        "operator_2": "value_2",
+        Operators.a: "value_1",
+        Operators.b: "value_2",
         ...
-        "operator_N": "value_N"
+        Operators.x: "value_x"
     },
     "column_name_2": {
         ...
     },
     ...
-    "column_name_N": {
+    "column_name_x": {
         ...
     }
 }
 ```
-
-
 **Valid operators**
- - **eq**: equals (cannot be combined with any other operator)
+ - **eq**: equals (cannot be combined with any other operator, including itself)
  - **neq**: not equal
  - **lt**: less than
  - **gt**: greater than
@@ -104,18 +119,18 @@ The general structure of a **filter_object** is as follows:
 
 **NOTE:** If you want to use a comparison operator like **gt** or **lte** on a column that was not indexed, you need to provide a comparison operator in the **filter_object** like so:
 ```python
-import csvquery
+from csvquery import open_csv, Operations, Comparisons
 
-dataset = csvquery.open_csv("people.csv")
+dataset = open_csv("people.csv")
 dataset.index("citizenship") # sorts people by citizenship
 
 voter_dataset = dataset.query({
     "citizenship": { # binary search
-        "eq": "USA"
+        Operations.equal: "USA"
     },
     "age" {  # not a binary search
-        "gte": "18"
-        "comparison": lambda a, b: int(a) < int(b) # you must provide a comparison lambda that returns true if a < b
+        Operations.greater_than_or_equal: "18"
+        Operations.comparison: Comparisons.integers
     }
 })
 ```
@@ -146,17 +161,20 @@ for row in voter_dataset.data:
 ### SQL translation
 
 **SQL query**
+
 ```sql
 SELECT name, age FROM people
 WHERE age >= 18 AND citizenship = "USA";
 ```
+
 **Python NoSQL query**
+
 ```python
 dataset = csvquery.open_csv("people.csv")
 
 dataset.query({
     "age": {"gte": 18},
-    "citizenship": {"eq": "USA"}
+    "citizenship": "USA"
 })
 ```
 
@@ -172,4 +190,35 @@ dataset.print_data(dataset.column_names[2:5])
 ```python
 dataset = csvquery.open_csv("people.csv")
 dataset.save_csv("people.csv", ";", dataset.column_names[2:5])
+```
+
+### The "eq" operator is optional
+
+```python
+dataset = csvquery.open_csv("people.csv")
+dataset.query({
+    "name":"John"
+})
+```
+
+### Chaining
+
+```python
+(
+csvquery
+    .open_csv("people.csv")
+    .index("age")
+    .query({"age":{"gte":18}, "citizenship":"USA"})
+    .print_data(["name", "id"])
+    .save_csv("voters.csv", ",", ["name", "id"])
+)
+```
+
+### Already sorted csv
+
+```python
+csvquery.open_csv("people_sorted_by_age.csv")
+
+csvquery.already_indexed("age", Comparisons.integer) # this allows you to do binary searches
+csvquery.query({"age": 44}).print_data(["name"])
 ```
