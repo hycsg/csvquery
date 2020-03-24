@@ -34,7 +34,10 @@ class Dataset:
         self.indexed_column = column_name
         self.indexed_comparison = comparison
     
-    def query(self, query_object):
+    def query(self, query_object=None):
+
+        if query_object == None:
+            return self
 
         def binary_search(key, conditions):
 
