@@ -20,7 +20,7 @@ def more_than_1000_cases_today():
     dataset.index("total_cases")
     result = dataset.query({
         "total_cases": {
-            "gt": "1000"
+            "gt": 1000
         },
         "date": {
             "eq": "2020-03-23"
@@ -33,4 +33,4 @@ def diversity_info():
     dataset.index("totpop10")
     dataset.print_data(dataset.column_names[2:])
 
-usa_date_range()
+more_than_1000_cases_today()
