@@ -8,7 +8,7 @@ setuptools.setup(
     version="0.2.2",
     author="Houston Youth Computer Science Group",
     author_email="houstoncsgroup@gmail.com",
-    description="A python package that allows you to execute NoSQL-style queries on CSV files.",
+    description="A versatile python package that allows you to execute MongoDB-style queries on CSV files.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/Houston-Youth-Computer-Science-Group/csv-query",
