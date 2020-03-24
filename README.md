@@ -138,7 +138,3 @@ for row in voter_dataset.data:
     print(row[0])
     ...
 ```
-
-#### Output options
-
-More output options are coming soon.
