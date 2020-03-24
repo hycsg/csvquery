@@ -145,12 +145,12 @@ for row in voter_dataset.data:
 
 ### SQL translation
 
-SQL Query:
+**SQL query**
 ```sql
 SELECT name, age FROM people
 WHERE age >= 18 AND citizenship = "USA";
 ```
-Python NoSQL Query:
+**Python NoSQL query**
 ```python
 dataset = csvquery.open_csv("people.csv")
 
