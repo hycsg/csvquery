@@ -184,6 +184,23 @@ class Dataset:
         for row in self.data:
             print_row(row, False)
         print()
+    
+    def save_csv(self, filepath, delimiter=",", columns=None):
+        if columns == None:
+            columns = self.column_names
+        
+        column_ids = []
+        for column_name in columns:
+            column_ids.append(self.column_names.index(column_name))
+        
+        csv_file = open(filepath, "w")
+        print(delimiter.join(columns), file=csv_file)
+        for row in self.data:
+            for i in column_ids:
+                if i == column_ids[-1]:
+                    print(row[i], file=csv_file)
+                else:
+                    print(row[i], file=csv_file, end=delimiter)
 
 
 def open_csv(filepath, delimiter=","):

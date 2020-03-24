@@ -15,20 +15,7 @@ def usa_cases_date_range():
     })
     result.print_data()
 
-def more_than_1000_cases_today_sort_before():
-    dataset = csv_query.open_csv("example_data/coronavirus_data.csv")
-    dataset.index("total_cases")
-    result = dataset.query({
-        "total_cases": {
-            csv_query.Operators.greater_than: 1000
-        },
-        "date": {
-            csv_query.Operators.equal: "2020-03-23"
-        }
-    })
-    result.print_data()
-
-def more_than_1000_cases_today_sort_after():
+def more_than_1000_cases_today():
     dataset = csv_query.open_csv("example_data/coronavirus_data.csv")
     result = dataset.query({
         "total_cases": {
@@ -41,10 +28,14 @@ def more_than_1000_cases_today_sort_after():
     })
     result.index("total_cases")
     result.print_data()
+    return result
 
-def diversity_info():
-    dataset = csv_query.open_csv("example_data/census_diversity.csv", ";")
+def save_more_than_1000_cases_today():
+    more_than_1000_cases_today().save_csv("output.csv", ";", ["location","total_cases"])
+
+def print_diversity_info():
+    dataset = csv_query.open_csv("example_data/census_diversity.csv", ",")
     dataset.index("totpop10")
-    dataset.print_data(dataset.column_names[2:])
+    dataset.save_csv(dataset.column_names[2:])
 
 usa_cases_date_range()
