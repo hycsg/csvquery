@@ -1,6 +1,7 @@
 import sys
 import math
 import types
+import csv
 
 class Operators:
     equal = "eq"
@@ -281,19 +282,19 @@ class Dataset:
                     print(row[i], file=csv_file)
                 else:
                     print(row[i], file=csv_file, end=delimiter)
+        csv_file.close()
 
 
 def open_csv(filepath, delimiter=","):
     dataset = Dataset()
     csv_file = open(filepath, "r")
-    for num, line in enumerate(csv_file):
-        if line == "":
-            continue
-        row = line.strip().split(delimiter)
-        if num == 0:
+    csv_reader = csv.reader(csv_file, delimiter=delimiter)
+    for line, row in enumerate(csv_reader):
+        if line == 0:
             dataset.column_names = row
         else:
             dataset.data.append(row)
+    csv_file.close()
     return dataset
 
 def error_message(msg):
