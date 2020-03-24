@@ -114,7 +114,7 @@ Finally, use **Dataset.print_data()** to output your new data to the console:
 ```python
 voter_dataset.print_data()
 ```
-Or, to access the data as a multidimensional array, just access the **data** attribute of the **Dataset** object:
+Or, to access the data as a two-dimensional array, just access the **data** attribute of the **Dataset** object:
 ```python
 for row in voter_dataset.data:
     print(row[0])
