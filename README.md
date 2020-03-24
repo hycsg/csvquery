@@ -118,7 +118,7 @@ You can optionally input specifically which columns you would like to print:
 ```python
 voter_dataset.print_data(["name", "age"])
 ```
-Or, to access the data as a two-dimensional array, just access the **data** attribute of the **Dataset** object:
+To access the data as a two-dimensional array, just use the **data** attribute of the **Dataset** object:
 ```python
 for row in voter_dataset.data:
     print(row[0])
