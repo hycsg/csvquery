@@ -1,3 +1,3 @@
-from .csvquery import Operators, open_csv
+from .csvquery import open_csv, Operators, Comparisons
 
-__all__ = ["Operators", "open_csv"]
+__all__ = ["open_csv", "Operators", "Comparisons"]

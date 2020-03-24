@@ -1,5 +1,6 @@
 import sys
 import math
+import types
 
 class Operators:
     equal = "eq",
@@ -11,14 +12,44 @@ class Operators:
 
     comparison = "comparison"
 
+class Comparisons:
+    integers = lambda a, b: int(a) < int(b)
+    floats = lambda a, b: float(a) < float(b)
+    strings = lambda a, b: a < b
+
+    @staticmethod
+    def get_date_comparison(format_string):
+        def compare_dates(format_string, a, b):
+            
+            #
+            # TODO
+            # 
+            # based on format_string, return True if a is earlier than b
+            #
+            # format_string examples:
+            # "YYYY-MM-DD"
+            # "MM/DD/YY"
+            # "/YYYYYY\/MM\/DD\"
+            # 
+
+            return a < b
+        return lambda a, b: compare_dates(format_string, a, b)
+
+
+    default = floats
+
 class Dataset:
     def __init__(self):
         self.data = []
         self.column_names = []
         self.indexed_column = ""
-        self.indexed_comparison = lambda a, b: float(a) < float(b)
+        self.indexed_comparison = Comparisons.default
     
-    def index(self, column_name, comparison = lambda a, b: float(a) < float(b)):
+    def index(self, column_name, comparison = default_comparison):
+        if not column_name in self.column_names:
+            error_message("column '{0}' does not exist, skipping index".format(column_name))
+            return
+
         def quick_sort(column, low, high, comparison): 
             if low < high: 
                 p = partition(column, low, high, comparison)
@@ -39,6 +70,10 @@ class Dataset:
 
             return i+1
         
+        if type(comparison) is not types.FunctionType:
+            error_message("indexing comparison is not a function, using default comparison instead")
+            comparison = Comparisons.default
+        
         sys.setrecursionlimit(10000)
         quick_sort(self.column_names.index(column_name), 0, len(self.data)-1, comparison)
         self.indexed_column = column_name
@@ -48,6 +83,9 @@ class Dataset:
 
         if query_object == None:
             return self
+        
+        if type(query_object) is not dict:
+            return Dataset()
 
         def binary_search(key, conditions):
 
@@ -85,8 +123,8 @@ class Dataset:
                     low_edge = binary_edge_search(lowest, highest, lambda a : not self.indexed_comparison(conditions[Operators.less_than_or_equal], a), True)
                     del query_object[self.indexed_column][Operators.less_than_or_equal]
 
-            if(high_edge < low_edge):
-                error_message("invalid bounds")
+            if(high_edge < low_edge or high_edge >= len(self.data) or low_edge < 0):
+                error_message("invalid bounds, returning empty dataset")
                 return []
 
             return self.data[low_edge:high_edge]
@@ -96,12 +134,28 @@ class Dataset:
 
         if self.indexed_column in query_object.keys():
             result_data = binary_search(self.column_names.index(self.indexed_column), query_object[self.indexed_column])
-        
+
         deletions = []
         for i, row in enumerate(result_data):
             for column_name, operations in query_object.items():
+                if not column_name in self.column_names:
+                    error_message("column '{0}' does not exist, skipping".format(column_name))
+                    continue
                 column_id = self.column_names.index(column_name)
                 for operator, value in operations.items():
+
+                    def get_comparator():
+                        if not Operators.comparison in operations:
+                            error_message("comparison not specified for '{0}' filter, using default comparison".format(column_name))
+                            query_object[column_name]["comparison"] = Comparisons.default # so the message doesn't appear again
+                            return Comparisons.default
+                        comparator = operations[Operators.comparison]
+                        if type(comparator) is not types.FunctionType:
+                            error_message("comparison for '{0}' filter is not a function, using default comparison instead".format(column_name))
+                            query_object[column_name]["comparison"] = Comparisons.default
+                            return Comparisons.default
+                        return comparator
+
                     keep = True
 
                     if operator == Operators.comparison:
@@ -111,13 +165,15 @@ class Dataset:
                     elif operator == Operators.not_equal:
                         keep = row[column_id] != value
                     elif operator == Operators.less_than:
-                        keep = operations[Operators.comparison](row[column_id], value)
+                        keep = get_comparator()(row[column_id], value)
                     elif operator == Operators.greater_than:
-                        keep = operations[Operators.comparison](value, row[column_id])
+                        keep = get_comparator()(value, row[column_id])
                     elif operator == Operators.less_than_or_equal:
-                        keep = not operations[Operators.comparison](value, row[column_id])
+                        keep = not get_comparator()(value, row[column_id])
                     elif operator == Operators.greater_than_or_equal:
-                        keep = not operations[Operators.comparison](row[column_id], value)
+                        keep = not get_comparator()(row[column_id], value)
+                    else:
+                        error_message("operator '{0}' does not exist, skipping".format(operator))
 
                     if not keep:
                         deletions.append(i)
@@ -139,6 +195,9 @@ class Dataset:
         
         column_ids = []
         for column_name in columns:
+            if not column_name in self.column_names:
+                error_message("column '{0}' does not exist, skipping".format(column_name))
+                continue
             column_ids.append(self.column_names.index(column_name))
         
         column_widths = {}
@@ -191,6 +250,9 @@ class Dataset:
         
         column_ids = []
         for column_name in columns:
+            if not column_name in self.column_names:
+                error_message("column '{0}' does not exist, skipping".format(column_name))
+                continue
             column_ids.append(self.column_names.index(column_name))
         
         csv_file = open(filepath, "w")

@@ -10,7 +10,7 @@ def usa_cases_date_range():
         "date": {
             csvquery.Operators.greater_than_or_equal: "2020-03-01",
             csvquery.Operators.less_than_or_equal: "2020-03-15",
-            csvquery.Operators.comparison: lambda a,b: a<b
+            csvquery.Operators.comparison: csvquery.Comparisons.get_date_comparison("YYYY-MM-DD")
         }
     })
     result.print_data()
@@ -20,7 +20,7 @@ def more_than_1000_cases_today():
     result = dataset.query({
         "total_cases": {
             csvquery.Operators.greater_than: 1000,
-            csvquery.Operators.comparison: lambda a,b: int(a)<int(b)
+            csvquery.Operators.comparison: csvquery.Comparisons.integers
         },
         "date": {
             csvquery.Operators.equal: "2020-03-23"
