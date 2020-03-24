@@ -170,27 +170,26 @@ WHERE age >= 18 AND citizenship = "USA";
 **Python NoSQL query**
 
 ```python
-dataset = csvquery.open_csv("people.csv")
-
-dataset.query({
+voters = people.query({
     "age": {
         "gte": 18
     },
     "citizenship": "USA"
 })
+voters.print_data(["name", "age"])
 ```
 
 ### Printing certain columns
 
 ```python
-dataset = csvquery.open_csv("people.csv")
+dataset = open_csv("people.csv")
 dataset.print_data(dataset.column_names[2:5])
 ```
 
 ### Rewriting a CSV file with fewer columns and a different delimiter
 
 ```python
-dataset = csvquery.open_csv("people.csv")
+dataset = open_csv("people.csv")
 dataset.save_csv("people.csv", ";", dataset.column_names[2:5])
 ```
 
@@ -207,8 +206,7 @@ dataset.query({
 
 ```python
 (
-csvquery
-    .open_csv("people.csv")
+open_csv("people.csv")
     .index("age")
     .query({"age":{"gte":18}, "citizenship":"USA"})
     .print_data(["name", "id"])
@@ -219,8 +217,8 @@ csvquery
 ### Already sorted csv
 
 ```python
-csvquery.open_csv("people_sorted_by_age.csv")
+people = open_csv("people_sorted_by_age.csv")
 
-csvquery.already_indexed("age", Comparisons.integer) # this allows you to do binary searches
-csvquery.query({"age": 44}).print_data(["name"])
+people.already_indexed("age", Comparisons.integer) # this allows you to do binary searches
+babies = people.query({"age": 0}).print_data(["name"])
 ```
