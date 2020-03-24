@@ -38,4 +38,16 @@ def print_diversity_info():
     dataset.index("totpop10")
     dataset.save_csv(dataset.column_names[2:])
 
-usa_cases_date_range()
+def apartment_sales():
+    dataset = csvquery.open_csv("example_data/SalesJan2009.csv")
+    dataset.index("Name", lambda a, b: a < b)
+
+    data = dataset.query({
+        "Name": {
+            "eq": "apartment"   
+        }
+    })
+
+    data.print_data()
+
+apartment_sales()
