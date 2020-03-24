@@ -89,6 +89,10 @@ class Dataset:
         
         if type(query_object) is not dict:
             return Dataset()
+        
+        for column_name, operators in query_object.items():
+            if operators is not dict:
+                operators = {Operators.equal: operators}
 
         def binary_search(key, conditions):
 
@@ -159,12 +163,16 @@ class Dataset:
             result_data = binary_search(self.column_names.index(self.indexed_column), query_object[self.indexed_column])
 
         deletions = []
+
         for i, row in enumerate(result_data):
+
             for column_name, operations in query_object.items():
+
                 if not column_name in self.column_names:
                     error_message("column '{0}' does not exist, skipping".format(column_name))
                     continue
                 column_id = self.column_names.index(column_name)
+
                 for operator, value in operations.items():
 
                     def get_comparator():
