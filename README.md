@@ -160,14 +160,14 @@ for row in voter_dataset.data:
 
 ### SQL translation
 
-**SQL query**
+**Classic SQL query**
 
 ```sql
 SELECT name, age FROM people
 WHERE age >= 18 AND citizenship = "USA";
 ```
 
-**Python NoSQL query**
+**Python MongoDB-style query**
 
 ```python
 voters = people.query({
