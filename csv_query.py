@@ -84,7 +84,7 @@ class Dataset:
                 elif Operators.less_than_or_equal in conditions.keys():
                     low_edge = binary_edge_search(lowest, highest, lambda a : not self.indexed_comparison(conditions[Operators.less_than_or_equal], a), True)
                     del query_object[self.indexed_column][Operators.less_than_or_equal]
-            
+
             if(high_edge < low_edge):
                 error_message("invalid bounds")
                 return []
@@ -94,7 +94,7 @@ class Dataset:
 
         result_data = self.data
 
-        if self.indexed_column in query_object:
+        if self.indexed_column in query_object.keys():
             result_data = binary_search(self.column_names.index(self.indexed_column), query_object[self.indexed_column])
         
         deletions = []
