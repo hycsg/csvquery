@@ -3,9 +3,7 @@ import csvquery
 def usa_cases_date_range():
     dataset = csvquery.open_csv("example_data/coronavirus_data.csv")
     result = dataset.query({
-        "location": {
-            csvquery.Operators.equal: "United States"
-        },
+        "location": "United States",
         "date": {
             csvquery.Operators.greater_than_or_equal: "2020-03-01",
             csvquery.Operators.less_than_or_equal: "2020-03-15",
@@ -21,9 +19,7 @@ def more_than_1000_cases_today():
             csvquery.Operators.greater_than: 1000,
             csvquery.Operators.comparison: csvquery.Comparisons.integers
         },
-        "date": {
-            csvquery.Operators.equal: "2020-03-23"
-        }
+        "date": "2020-03-23"
     })
     result.index("total_cases")
     result.print_data()

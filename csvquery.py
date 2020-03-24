@@ -91,8 +91,8 @@ class Dataset:
             return Dataset()
         
         for column_name, operators in query_object.items():
-            if operators is not dict:
-                operators = {Operators.equal: operators}
+            if type(operators) is not dict:
+                query_object[column_name] = {Operators.equal: operators}
 
         def binary_search(key, conditions):
 
