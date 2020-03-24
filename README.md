@@ -1,6 +1,6 @@
 # CSV Query
 
-A python package that allows you to execute NoSQL-style queries on CSV files.
+A versatile python package that allows you to execute MongoDB-style queries on CSV files.
 
 ## Downloading
 
