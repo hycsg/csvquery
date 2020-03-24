@@ -158,7 +158,7 @@ for row in voter_dataset.data:
 
 ## More examples
 
-### SQL translation
+### SQL equivalent
 
 **SQL query**
 
