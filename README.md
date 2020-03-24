@@ -214,7 +214,7 @@ open_csv("people.csv")
 )
 ```
 
-### Already sorted csv
+### Already sorted CSV
 
 ```python
 people = open_csv("people_sorted_by_age.csv")
