@@ -4,8 +4,8 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="csv-query",
-    version="0.1.2",
+    name="csvquery",
+    version="0.1.0",
     author="Houston Youth Computer Science Group",
     author_email="houstoncsgroup@gmail.com",
     description="A python package that allows you to execute NoSQL-style queries on CSV files.",

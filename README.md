@@ -4,7 +4,9 @@ A python package that allows you to execute NoSQL-style queries on CSV files.
 
 ## Downloading
 
-Download **csv_query.py** and add it to your project folder (WIP).
+```
+pip install csvquery
+```
 
 ## Usage
 
@@ -12,18 +14,18 @@ Download **csv_query.py** and add it to your project folder (WIP).
 
 Use **open_csv(path)** to produce a **Dataset** from a CSV file:
 ```python
-import csv_query
+import csvquery
 
-dataset = csv_query.open_csv("path/to/file.csv")
+dataset = csvquery.open_csv("path/to/file.csv")
 ```
 
 ### Indexing
 
 Once you have a dataset, use **Dataset.index(column_name[, comparison_operation])** to sort the rows of data based on the values in a specified column. Sorting the data is optional, but doing so allows you to do binary searches which have a time complexity of just **O(log(n))**.
 ```python
-import csv_query
+import csvquery
 
-dataset = csv_query.open_csv("people.csv")
+dataset = csvquery.open_csv("people.csv")
 dataset.index("age") # sorts people by ascending age
 ```
 The default comparison operation used to sort the data is:
@@ -32,9 +34,9 @@ lambda a, b: float(a) < float(b)
 ```
 You can also specify a custom comparison operation to, for example, sort things alphabetically:
 ```python
-import csv_query
+import csvquery
 
-dataset = csv_query.open_csv("people.csv")
+dataset = csvquery.open_csv("people.csv")
 dataset.index("name", lambda a, b: a < b) # alphabetical string comparisons are built-in in Python
 ```
 
@@ -42,9 +44,9 @@ dataset.index("name", lambda a, b: a < b) # alphabetical string comparisons are 
 
 Use **Dataset.query(filter_object)** to fetch rows of data that pass through specified filters:
 ```python
-import csv_query
+import csvquery
 
-dataset = csv_query.open_csv("people.csv")
+dataset = csvquery.open_csv("people.csv")
 dataset.index("age")
 
 voter_dataset = dataset.query({
@@ -64,11 +66,11 @@ voters_named_john = voter_dataset.query({
     }
 })
 ```
-You can also use the **csv_query.Operators** class instead of operator strings:
+You can also use the **csvquery.Operators** class instead of operator strings:
 ```python
 voters_named_john = voter_dataset.query({
     "name": {
-        csv_query.Operators.equal : "John"
+        csvquery.Operators.equal : "John"
     }
 })
 ```
@@ -102,9 +104,9 @@ The general structure of a **filter_object** is as follows:
 
 **NOTE:** If you want to use a comparison operator like **gt** or **lte** on a column that was not indexed, you need to provide a comparison operator in the **filter_object** like so:
 ```python
-import csv_query
+import csvquery
 
-dataset = csv_query.open_csv("people.csv")
+dataset = csvquery.open_csv("people.csv")
 dataset.index("citizenship") # sorts people by citizenship
 
 voter_dataset = dataset.query({
