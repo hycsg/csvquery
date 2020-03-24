@@ -10,7 +10,7 @@ pip install csvquery
 
 ## Usage
 
-### Loading Data
+### Loading data
 
 Use **open_csv(path)** to produce a **Dataset** from a CSV file:
 ```python
@@ -94,7 +94,7 @@ The general structure of a **filter_object** is as follows:
 ```
 
 
-**Valid Operators**
+**Valid operators**
  - **eq**: equals (cannot be combined with any other operator)
  - **neq**: not equal
  - **lt**: less than
@@ -120,7 +120,7 @@ voter_dataset = dataset.query({
 })
 ```
 
-### Outputting Data
+### Outputting data
 
 Use **Dataset.print_data([column_names])** to output your new data to the console:
 ```python
@@ -141,9 +141,9 @@ for row in voter_dataset.data:
     ...
 ```
 
-## More Examples
+## More examples
 
-### SQL Translation
+### SQL translation
 
 SQL Query:
 ```sql
@@ -160,14 +160,14 @@ dataset.query({
 })
 ```
 
-### Printing Certain Columns
+### Printing certain columns
 
 ```python
 dataset = csvquery.open_csv("people.csv")
 dataset.print_data(dataset.column_names[2:5])
 ```
 
-### Overwriting a File
+### Rewriting a CSV file with fewer columns and a different delimiter
 
 ```python
 dataset = csvquery.open_csv("people.csv")
