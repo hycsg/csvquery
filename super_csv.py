@@ -4,6 +4,7 @@ import math
 class Dataset:
     def __init__(self):
         self.data = []
+        self.column_names = []
         self.indexed_column = ""
         self.indexed_comparison = lambda a, b: float(a) < float(b)
     
@@ -105,9 +106,57 @@ class Dataset:
         result.column_names = self.column_names
         return result
     
-    def print_data(self):
+    def print_data(self, columns=None):
+        if columns == None:
+            columns = self.column_names
+        
+        column_ids = []
+        for column_name in columns:
+            column_ids.append(self.column_names.index(column_name))
+        
+        column_widths = {}
+        for i in column_ids:
+            max_width = 0
+
+            for row in self.data:
+                width = len(row[i])
+                if width > max_width:
+                    max_width = width
+
+            title_width = len(self.column_names[i])
+            if(title_width > max_width):
+                max_width = title_width
+            
+            column_widths[i] = max_width
+
+        def print_bar(c="-"):
+            print("+", end="")
+            for i in column_ids:
+                print("".rjust(column_widths[i]+2, c), end="+")
+            print()
+        
+        def print_row(row, title):
+            if title:
+                print_bar("=")
+            print("|", end="")
+            for i in column_ids:
+                adjusted = ""
+                if title:
+                    adjusted = row[i].center(column_widths[i])
+                else:
+                    adjusted = row[i].ljust(column_widths[i])
+                print(" " + adjusted, end=" |")
+            print()
+            if title:
+                print_bar("=")
+            else:
+                print_bar()
+        
+        print()
+        print_row(self.column_names, True)
         for row in self.data:
-            print(row)
+            print_row(row, False)
+        print()
 
 
 def open_csv(filepath, delimiter=","):
