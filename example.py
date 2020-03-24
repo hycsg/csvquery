@@ -1,7 +1,7 @@
-import super_csv
+import csv_query
 
 def usa_date_range():
-    dataset = super_csv.open_csv("example_data/coronavirus_data.csv")
+    dataset = csv_query.open_csv("example_data/coronavirus_data.csv")
     dataset.index("location", lambda a,b: a<b)
     result = dataset.query({
         "location": {
@@ -16,7 +16,7 @@ def usa_date_range():
     result.print_data()
 
 def more_than_1000_cases_today():
-    dataset = super_csv.open_csv("example_data/coronavirus_data.csv")
+    dataset = csv_query.open_csv("example_data/coronavirus_data.csv")
     dataset.index("total_cases")
     result = dataset.query({
         "total_cases": {
@@ -29,7 +29,7 @@ def more_than_1000_cases_today():
     result.print_data()
 
 def diversity_info():
-    dataset = super_csv.open_csv("example_data/census_diversity.csv", ";")
+    dataset = csv_query.open_csv("example_data/census_diversity.csv", ";")
     dataset.index("totpop10")
     dataset.print_data(dataset.column_names[2:])
 
