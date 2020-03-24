@@ -40,7 +40,7 @@ dataset.index("name", lambda a, b: a < b) # alphabetical string comparisons are 
 
 ### Queries
 
-Use **Dataset.query(filter_object)** to fetch rows of data that pass through specified filters:
+Use **Dataset.query([filter_object])** to fetch rows of data that pass through specified filters:
 ```python
 import super_csv
 
@@ -56,7 +56,7 @@ voter_dataset = dataset.query({
     }
 })
 ```
-Since **Dataset.query(filter_object)** returns another **Dataset**, you can query the resulting dataset as well:
+Since **Dataset.query([filter_object])** returns another **Dataset**, you can execute a query on the resulting dataset as well:
 ```python
 voters_named_john = voter_dataset.query({
     "name": {
