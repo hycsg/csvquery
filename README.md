@@ -12,7 +12,7 @@ pip install csvquery
 
 ### Loading Data
 
-Use **open_csv(path)** to produce a **Dataset** from a CSV file:
+Use **open_csv([path to file])** to produce a **Dataset** from a CSV file:
 ```python
 import csvquery
 
