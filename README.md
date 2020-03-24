@@ -118,15 +118,19 @@ voter_dataset = dataset.query({
 })
 ```
 
-### Outputing Data
+### Outputting Data
 
-Finally, use **Dataset.print_data([column_names])** to output your new data to the console:
+Use **Dataset.print_data([column_names])** to output your new data to the console:
 ```python
 voter_dataset.print_data()
 ```
-You can optionally input specifically which columns you would like to print:
+You can optionally specify which columns to print:
 ```python
 voter_dataset.print_data(["name", "age"])
+```
+You can also save **Dataset** objects as CSV files using **Dataset.save_csv(filepath[, delimiter[, columns])**
+```python
+voter_dataset.save_csv("output.csv", ";", ["name", "age"])
 ```
 To access the data as a two-dimensional array, just use the **data** attribute of the **Dataset** object:
 ```python
