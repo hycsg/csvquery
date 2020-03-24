@@ -94,7 +94,7 @@ The general structure of a **filter_object** is as follows:
 
 **Valid Operators**
  - **eq**: equals (cannot be combined with any other operator)
- - **neq**: equals (cannot be combined with any other operator)
+ - **neq**: not equal
  - **lt**: less than
  - **gt**: greater than
  - **lte**: less than or equal
