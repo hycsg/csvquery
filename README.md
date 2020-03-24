@@ -40,7 +40,7 @@ Comparisons.integers    >> lambda a, b: int(a) < int(b)
 Comparisons.floats      >> lambda a, b: float(a) < float(b)
 Comparisons.strings     >> lambda a, b: a < b
 ```
-The **csvquery.Comparisons** class also has a static method called **get_date_comparison(format_string)** which returns a custom date comparison function based on the specified format that you can pass as the comparison operation:
+The **csvquery.Comparisons** class also has a static method called **get_date_comparison(format_string)** which returns a custom date comparison function (based on the specified format) that you can pass as the comparison operation:
 ```python
 from csvquery import open_csv, Comparisons
 
