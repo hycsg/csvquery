@@ -140,3 +140,36 @@ for row in voter_dataset.data:
     print(row[0])
     ...
 ```
+
+## More Examples
+
+### SQL Translation
+
+SQL Query:
+```sql
+SELECT name, age FROM people
+WHERE age >= 18 AND citizenship = "USA";
+```
+Python NoSQL Query:
+```python
+dataset = csvquery.open_csv("people.csv")
+
+dataset.query({
+    "age": {"gte": 18},
+    "citizenship": {"eq": "USA"}
+})
+```
+
+### Printing Certain Columns
+
+```python
+dataset = csvquery.open_csv("people.csv")
+dataset.print_data(dataset.column_names[2:5])
+```
+
+### Overwriting a File
+
+```python
+dataset = csvquery.open_csv("people.csv")
+dataset.save_csv("people.csv", ";", dataset.column_names[2:5])
+```
