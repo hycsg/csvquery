@@ -2,3 +2,9 @@ vs workspace.code-workspace
 architecture.png
 architecture.svg
 __pycache__
+*.bat
+*.egg-info
+build
+dist
+package/README.md
+package/csv-query/csv_query.py
