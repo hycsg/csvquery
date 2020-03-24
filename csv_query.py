@@ -1,6 +1,16 @@
 import sys
 import math
 
+class Operators:
+    equal = "eq",
+    not_equal = "neq",
+    less_than = "lt",
+    greater_than = "gt",
+    less_than_or_equal = "lte",
+    greater_than_or_equal = "gte",
+
+    comparison = "comparison"
+
 class Dataset:
     def __init__(self):
         self.data = []
@@ -57,14 +67,23 @@ class Dataset:
 
             low_edge = lowest
             high_edge = highest
-            if "eq" in conditions.keys():
-                low_edge = binary_edge_search(lowest, highest, lambda a : self.indexed_comparison(a, conditions["eq"]), True)
-                high_edge = binary_edge_search(lowest, highest, lambda a : self.indexed_comparison(conditions["eq"], a), False)
+            if Operators.equal in conditions.keys():
+                low_edge = binary_edge_search(lowest, highest, lambda a : self.indexed_comparison(a, conditions[Operators.equal]), True)
+                high_edge = binary_edge_search(lowest, highest, lambda a : self.indexed_comparison(conditions[Operators.equal], a), False)
+                del query_object[self.indexed_column][Operators.equal]
             else:
-                if "gt" in conditions.keys():
-                    low_edge = binary_edge_search(lowest, highest, lambda a : self.indexed_comparison(conditions["gt"], a), False)
-                if "lt" in conditions.keys():
-                    high_edge = binary_edge_search(lowest, highest, lambda a : self.indexed_comparison(a, conditions["lt"]), True)
+                if Operators.greater_than in conditions.keys():
+                    low_edge = binary_edge_search(lowest, highest, lambda a : self.indexed_comparison(conditions[Operators.greater_than], a), False)
+                    del query_object[self.indexed_column][Operators.greater_than]
+                elif Operators.greater_than_or_equal in conditions.keys():
+                    low_edge = binary_edge_search(lowest, highest, lambda a : not self.indexed_comparison(a, conditions[Operators.greater_than_or_equal]), True)
+                    del query_object[self.indexed_column][Operators.greater_than_or_equal]
+                if Operators.less_than in conditions.keys():
+                    high_edge = binary_edge_search(lowest, highest, lambda a : self.indexed_comparison(a, conditions[Operators.less_than]), True)
+                    del query_object[self.indexed_column][Operators.less_than]
+                elif Operators.less_than_or_equal in conditions.keys():
+                    low_edge = binary_edge_search(lowest, highest, lambda a : not self.indexed_comparison(conditions[Operators.less_than_or_equal], a), True)
+                    del query_object[self.indexed_column][Operators.less_than_or_equal]
             
             if(high_edge < low_edge):
                 error_message("invalid bounds")
@@ -77,31 +96,36 @@ class Dataset:
 
         if self.indexed_column in query_object:
             result_data = binary_search(self.column_names.index(self.indexed_column), query_object[self.indexed_column])
-            del query_object[self.indexed_column]
         
         deletions = []
         for i, row in enumerate(result_data):
             for column_name, operations in query_object.items():
                 column_id = self.column_names.index(column_name)
                 for operator, value in operations.items():
-                    if operator == "comparison":
+                    keep = True
+
+                    if operator == Operators.comparison:
                         continue
-                    elif operator == "eq":
-                        if not row[column_id] == value:
-                            deletions.append(i)
-                            break
-                    elif operator == "lt":
-                        if not operations["comparison"](row[column_id], value):
-                            deletions.append(i)
-                            break
-                    elif operator == "gt":
-                        if not operations["comparison"](value, row[column_id]):
-                            deletions.append(i)
-                            break
+                    elif operator == Operators.equal:
+                        keep = row[column_id] == value
+                    elif operator == Operators.not_equal:
+                        keep = row[column_id] != value
+                    elif operator == Operators.less_than:
+                        keep = operations[Operators.comparison](row[column_id], value)
+                    elif operator == Operators.greater_than:
+                        keep = operations[Operators.comparison](value, row[column_id])
+                    elif operator == Operators.less_than_or_equal:
+                        keep = not operations[Operators.comparison](value, row[column_id])
+                    elif operator == Operators.greater_than_or_equal:
+                        keep = not operations[Operators.comparison](row[column_id], value)
+
+                    if not keep:
+                        deletions.append(i)
+                        break
                 if i in deletions:
                     break
         
-        for i in range(len(deletions)-1, -1, -1):
+        for i in reversed(range(len(deletions))):
             del result_data[deletions[i]]
 
         result = Dataset()
