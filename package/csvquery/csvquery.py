@@ -32,7 +32,7 @@ class Dataset:
         
             for j in range(low, high):
                 if comparison(self.data[j][column], pivot):
-                    i = i+1
+                    i += 1
                     self.data[i], self.data[j] = self.data[j], self.data[i]
             
             self.data[i+1], self.data[high] = self.data[high], self.data[i+1]
