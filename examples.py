@@ -38,5 +38,4 @@ def print_diversity_info():
     dataset.index("totpop10")
     dataset.save_csv(dataset.column_names[2:])
 
-
 usa_cases_date_range()
