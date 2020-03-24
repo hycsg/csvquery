@@ -1,24 +1,56 @@
 import sys
 import math
+import types
+import csv
 
 class Operators:
-    equal = "eq",
-    not_equal = "neq",
-    less_than = "lt",
-    greater_than = "gt",
-    less_than_or_equal = "lte",
-    greater_than_or_equal = "gte",
+    equal = "eq"
+    not_equal = "neq"
+    less_than = "lt"
+    greater_than = "gt"
+    less_than_or_equal = "lte"
+    greater_than_or_equal = "gte"
 
     comparison = "comparison"
+
+class Comparisons:
+    integers = lambda a, b: int(a) < int(b)
+    floats = lambda a, b: float(a) < float(b)
+    strings = lambda a, b: a < b
+
+    @staticmethod
+    def get_date_comparison(format_string):
+        def compare_dates(format_string, a, b):
+            
+            #
+            # TODO
+            # 
+            # based on format_string, return True if a is earlier than b
+            #
+            # format_string examples:
+            # "YYYY-MM-DD"
+            # "MM/DD/YY"
+            # "YYYYYY::MM::DD::hh::mm::ss"
+            # 
+
+            return a < b
+        return lambda a, b: compare_dates(format_string, a, b)
+
+
+    default = floats
 
 class Dataset:
     def __init__(self):
         self.data = []
         self.column_names = []
         self.indexed_column = ""
-        self.indexed_comparison = lambda a, b: float(a) < float(b)
+        self.indexed_comparison = Comparisons.default
     
-    def index(self, column_name, comparison = lambda a, b: float(a) < float(b)):
+    def index(self, column_name, comparison = Comparisons.default):
+        if not column_name in self.column_names:
+            error_message("column '{0}' does not exist, skipping index".format(column_name))
+            return self
+
         def quick_sort(column, low, high, comparison): 
             if low < high: 
                 p = partition(column, low, high, comparison)
@@ -32,22 +64,35 @@ class Dataset:
         
             for j in range(low, high):
                 if comparison(self.data[j][column], pivot):
-                    i += 1
+                    i = i+1
                     self.data[i], self.data[j] = self.data[j], self.data[i]
             
             self.data[i+1], self.data[high] = self.data[high], self.data[i+1]
 
             return i+1
         
+        if type(comparison) is not types.FunctionType:
+            error_message("indexing comparison is not a function, using default comparison instead")
+            comparison = Comparisons.default
+        
         sys.setrecursionlimit(10000)
         quick_sort(self.column_names.index(column_name), 0, len(self.data)-1, comparison)
         self.indexed_column = column_name
         self.indexed_comparison = comparison
+        
+        return self
     
     def query(self, query_object=None):
 
         if query_object == None:
             return self
+        
+        if type(query_object) is not dict:
+            return Dataset()
+        
+        for column_name, operators in query_object.items():
+            if type(operators) is not dict:
+                query_object[column_name] = {Operators.equal: operators}
 
         def binary_search(key, conditions):
 
@@ -65,28 +110,48 @@ class Dataset:
             lowest = 0
             highest = len(self.data) - 1
 
-            low_edge = lowest
-            high_edge = highest
-            if Operators.equal in conditions.keys():
-                low_edge = binary_edge_search(lowest, highest, lambda a : self.indexed_comparison(a, conditions[Operators.equal]), True)
-                high_edge = binary_edge_search(lowest, highest, lambda a : self.indexed_comparison(conditions[Operators.equal], a), False)
-                del query_object[self.indexed_column][Operators.equal]
-            else:
-                if Operators.greater_than in conditions.keys():
-                    low_edge = binary_edge_search(lowest, highest, lambda a : self.indexed_comparison(conditions[Operators.greater_than], a), False)
-                    del query_object[self.indexed_column][Operators.greater_than]
-                elif Operators.greater_than_or_equal in conditions.keys():
-                    low_edge = binary_edge_search(lowest, highest, lambda a : not self.indexed_comparison(a, conditions[Operators.greater_than_or_equal]), True)
-                    del query_object[self.indexed_column][Operators.greater_than_or_equal]
-                if Operators.less_than in conditions.keys():
-                    high_edge = binary_edge_search(lowest, highest, lambda a : self.indexed_comparison(a, conditions[Operators.less_than]), True)
-                    del query_object[self.indexed_column][Operators.less_than]
-                elif Operators.less_than_or_equal in conditions.keys():
-                    low_edge = binary_edge_search(lowest, highest, lambda a : not self.indexed_comparison(conditions[Operators.less_than_or_equal], a), True)
-                    del query_object[self.indexed_column][Operators.less_than_or_equal]
+            used_operators = []
 
-            if(high_edge < low_edge):
-                error_message("invalid bounds")
+            def get_edge(comparators, default):
+                for operator, value in conditions.items():
+                    if operator in comparators:
+                        comparator = comparators[operator]
+                        comparison_1 = None
+                        comparison_2 = None
+
+                        if comparator[0]:
+                            comparison_1 = lambda a : self.indexed_comparison(a, value)
+                        else:
+                            comparison_1 = lambda a : self.indexed_comparison(value, a)
+                        
+                        if comparator[1]:
+                            comparison_2 = lambda a : not comparison_1(a)
+                        else:
+                            comparison_2 = comparison_1
+
+                        return_val = binary_edge_search(lowest, highest, comparison_2, comparator[0])
+                        used_operators.append(operator)
+                        return return_val
+                return default
+                
+            low_edge = get_edge({
+                Operators.equal                 :   (True, False),
+                Operators.greater_than          :   (False, False),
+                Operators.greater_than_or_equal :   (True, True),
+            }, lowest)
+
+            high_edge = get_edge({
+                Operators.equal                 :   (False, False),
+                Operators.less_than             :   (True, False),
+                Operators.less_than_or_equal    :   (False, True),
+            }, highest)
+
+            for operator in used_operators:
+                if operator in conditions:
+                    del conditions[operator]
+
+            if(high_edge < low_edge or high_edge >= len(self.data) or low_edge < 0):
+                error_message("invalid bounds, returning empty dataset")
                 return []
 
             return self.data[low_edge:high_edge]
@@ -96,32 +161,50 @@ class Dataset:
 
         if self.indexed_column in query_object.keys():
             result_data = binary_search(self.column_names.index(self.indexed_column), query_object[self.indexed_column])
-        
+
         deletions = []
+
         for i, row in enumerate(result_data):
+
             for column_name, operations in query_object.items():
+
+                if not column_name in self.column_names:
+                    error_message("column '{0}' does not exist, skipping".format(column_name))
+                    continue
                 column_id = self.column_names.index(column_name)
+
                 for operator, value in operations.items():
-                    keep = True
+
+                    def get_comparator():
+                        if not Operators.comparison in operations:
+                            error_message("comparison not specified for '{0}' filter, using default comparison".format(column_name))
+                            query_object[column_name]["comparison"] = Comparisons.default # so the message doesn't appear again
+                            return Comparisons.default
+                        comparator = operations[Operators.comparison]
+                        if type(comparator) is not types.FunctionType:
+                            error_message("comparison for '{0}' filter is not a function, using default comparison instead".format(column_name))
+                            query_object[column_name]["comparison"] = Comparisons.default
+                            return Comparisons.default
+                        return comparator
+
+                    comparators = {
+                        Operators.equal                 :   lambda t, v: t == v,
+                        Operators.not_equal             :   lambda t, v: t != v,
+                        Operators.less_than             :   lambda t, v: get_comparator()(t, v),
+                        Operators.greater_than          :   lambda t, v: get_comparator()(v, t),
+                        Operators.less_than_or_equal    :   lambda t, v: not get_comparator()(v, t),
+                        Operators.greater_than_or_equal :   lambda t, v: not get_comparator()(t, v),
+                    }
 
                     if operator == Operators.comparison:
                         continue
-                    elif operator == Operators.equal:
-                        keep = row[column_id] == value
-                    elif operator == Operators.not_equal:
-                        keep = row[column_id] != value
-                    elif operator == Operators.less_than:
-                        keep = operations[Operators.comparison](row[column_id], value)
-                    elif operator == Operators.greater_than:
-                        keep = operations[Operators.comparison](value, row[column_id])
-                    elif operator == Operators.less_than_or_equal:
-                        keep = not operations[Operators.comparison](value, row[column_id])
-                    elif operator == Operators.greater_than_or_equal:
-                        keep = not operations[Operators.comparison](row[column_id], value)
+                    elif operator in comparators:
+                        if not comparators[operator](row[column_id], value):
+                            deletions.append(i)
+                            break
+                    else:
+                        error_message("operator '{0}' does not exist, skipping".format(operator))
 
-                    if not keep:
-                        deletions.append(i)
-                        break
                 if i in deletions:
                     break
         
@@ -139,6 +222,9 @@ class Dataset:
         
         column_ids = []
         for column_name in columns:
+            if not column_name in self.column_names:
+                error_message("column '{0}' does not exist, skipping".format(column_name))
+                continue
             column_ids.append(self.column_names.index(column_name))
         
         column_widths = {}
@@ -191,6 +277,9 @@ class Dataset:
         
         column_ids = []
         for column_name in columns:
+            if not column_name in self.column_names:
+                error_message("column '{0}' does not exist, skipping".format(column_name))
+                continue
             column_ids.append(self.column_names.index(column_name))
         
         csv_file = open(filepath, "w")
@@ -201,19 +290,19 @@ class Dataset:
                     print(row[i], file=csv_file)
                 else:
                     print(row[i], file=csv_file, end=delimiter)
+        csv_file.close()
 
 
 def open_csv(filepath, delimiter=","):
     dataset = Dataset()
     csv_file = open(filepath, "r")
-    for num, line in enumerate(csv_file):
-        if line == "":
-            continue
-        row = line.strip().split(delimiter)
-        if num == 0:
+    csv_reader = csv.reader(csv_file, delimiter=delimiter)
+    for line, row in enumerate(csv_reader):
+        if line == 0:
             dataset.column_names = row
         else:
             dataset.data.append(row)
+    csv_file.close()
     return dataset
 
 def error_message(msg):

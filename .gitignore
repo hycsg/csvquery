@@ -7,4 +7,4 @@ __pycache__
 build
 dist
 package/README.md
-package/csv-query/csv_query.py
+package/csvquery/csvquery.py
