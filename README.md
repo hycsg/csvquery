@@ -173,7 +173,9 @@ WHERE age >= 18 AND citizenship = "USA";
 dataset = csvquery.open_csv("people.csv")
 
 dataset.query({
-    "age": {"gte": 18},
+    "age": {
+        "gte": 18
+    },
     "citizenship": "USA"
 })
 ```
