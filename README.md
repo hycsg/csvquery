@@ -112,7 +112,7 @@ voter_dataset = dataset.query({
         "eq": "USA"
     },
     "age" {  # not a binary search
-        "gt": "17"
+        "gte": "18"
         "comparison": lambda a, b: int(a) < int(b) # you must provide a comparison lambda that returns true if a < b
     }
 })
