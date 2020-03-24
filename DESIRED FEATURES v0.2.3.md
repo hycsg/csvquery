@@ -2,3 +2,4 @@
 - query_one
 - relational data
 - better naming conventions
+- date comparisons
