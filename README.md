@@ -110,9 +110,13 @@ voter_dataset = dataset.query({
 
 ### Outputing Data
 
-Finally, use **Dataset.print_data()** to output your new data to the console:
+Finally, use **Dataset.print_data([column_names])** to output your new data to the console:
 ```python
 voter_dataset.print_data()
+```
+You can optionally input specifically which columns you would like to print:
+```python
+voter_dataset.print_data(["name", "age"])
 ```
 Or, to access the data as a two-dimensional array, just access the **data** attribute of the **Dataset** object:
 ```python
