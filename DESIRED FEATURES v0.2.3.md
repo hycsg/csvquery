@@ -1,5 +1,9 @@
-- select
-- query_one
-- relational data
+checklist
+✓ date comparisons
+✓ save csv correctly
+✓ select
+✓ query_one
+✓ relational data
+- better input sanitization
 - better naming conventions
-- date comparisons
+- update docs
