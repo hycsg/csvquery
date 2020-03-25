@@ -81,6 +81,10 @@ voters_named_john = voter_dataset.query({
     }
 })
 ```
+Use **Dataset.query_one(filter_object)** if you're just looking for one result:
+```python
+john_doe = people_dataset.query_one({"phone":"555-123-4567"})
+```
 You can also use the **csvquery.Operators** class instead of operator strings:
 ```python
 from csvquery import Operators
@@ -109,6 +113,7 @@ The general structure of a **filter_object** is as follows:
     }
 }
 ```
+
 **Valid operators**
  - **eq**: equals (cannot be combined with any other operator, including itself)
  - **neq**: not equal
@@ -116,6 +121,7 @@ The general structure of a **filter_object** is as follows:
  - **gt**: greater than
  - **lte**: less than or equal
  - **gte**: greater than or equal
+ - **in**: inside the provided array
 
 **NOTE:** If you want to use a comparison operator like **gt** or **lte** on a column that was not indexed, you need to provide a comparison operator in the **filter_object** like so:
 ```python
@@ -134,22 +140,37 @@ voter_dataset = dataset.query({
     }
 })
 ```
+### Selecting fields
+You can use **Dataset.select([fields])** to receive a new dataset with only the specified fields:
+```python
+names_and_nationalities = people.select(["name", "nationality"])
+```
+
+If the **Dataset** is effectively one-dimensional either horizontally or vertically as a result of using **Dataset.query_one([filter_object])** or **Dataset.select([fields])**, you can use **Dataset.to_dictionary()** or **Dataset.to_list()**:
+```python
+texans = people.query({"state":"TX"}).select("name") # dataset is one column wide
+texan_names = texans.to_list()
+```
+```python
+john_doe = people.query_one({"phone":"555-123-4567"}) # dataset is one row high
+print(john_doe.to_dictionary()["address"])
+```
 
 ### Outputting data
 
-Use **Dataset.print_data([column_names])** to output your new data to the console:
+Use **Dataset.print_table([column_names])** to output your new data to the console:
 ```python
-voter_dataset.print_data()
+voter_dataset.print_table()
 ```
 You can optionally specify which columns to print:
 ```python
-voter_dataset.print_data(["name", "age"])
+voter_dataset.print_table(["name", "age"])
 ```
 You can also save **Dataset** objects as CSV files using **Dataset.save_csv(filepath[, delimiter[, columns])**
 ```python
 voter_dataset.save_csv("output.csv", ";", ["name", "age"])
 ```
-To access the data as a two-dimensional array, just use the **data** attribute of the **Dataset** object:
+To access the data directly as a two-dimensional array, just use the **data** attribute of the **Dataset** object:
 ```python
 for row in voter_dataset.data:
     print(row[0])
@@ -175,22 +196,21 @@ voters = people.query({
         "gte": 18
     },
     "citizenship": "USA"
-})
-voters.print_data(["name", "age"])
+}).select(["name", "age"])
 ```
 
 ### Printing certain columns
 
 ```python
 dataset = open_csv("people.csv")
-dataset.print_data(dataset.column_names[2:5])
+dataset.print_table(dataset.fields[2:5])
 ```
 
 ### Rewriting a CSV file with fewer columns and a different delimiter
 
 ```python
 dataset = open_csv("people.csv")
-dataset.save_csv("people.csv", ";", dataset.column_names[2:5])
+dataset.save_csv("people.csv", ";", dataset.fields[2:5])
 ```
 
 ### The "eq" operator is optional
@@ -202,6 +222,12 @@ dataset.query({
 })
 ```
 
+### Selecting one field
+
+```python
+people.select("name") # doesn't need to be an array
+```
+
 ### Chaining
 
 ```python
@@ -209,8 +235,9 @@ dataset.query({
 open_csv("people.csv")
     .index("age")
     .query({"age":{"gte":18}, "citizenship":"USA"})
-    .print_data(["name", "id"])
-    .save_csv("voters.csv", ",", ["name", "id"])
+    .select(["name", "id"])
+    .save_csv("voters.csv", ",")
+    .print_table()
 )
 ```
 
@@ -220,5 +247,24 @@ open_csv("people.csv")
 people = open_csv("people_sorted_by_age.csv")
 
 people.already_indexed("age", Comparisons.integer) # this allows you to do binary searches
-babies = people.query({"age": 0}).print_data(["name"])
+babies = people.query({"age": 0}).print_table(["name"])
+```
+
+### Relational data
+```python
+from csvquery import open_csv
+import statistics
+
+houses = open_csv("houses.csv")
+people = open_csv("people.csv")
+
+texas_homes = houses.query({"state":"TX"})
+texas_homeowner_ids = texas_homes.select("id").to_list()
+texas_homeowners = people.query({
+    "id": {
+        "in": texas_homeowner_ids
+    }
+})
+texas_homeowner_ages = texas_homeowners.select("age").to_list()
+average_texas_homeowner_age = statistics.mean(texas_homeowner_ages)
 ```
