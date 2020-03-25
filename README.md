@@ -81,6 +81,10 @@ voters_named_john = voter_dataset.query({
     }
 })
 ```
+Use **Dataset.query_one(filter_object)** if you're just looking for one result:
+```python
+john_doe = people_dataset.query_one({"phone":"555-123-4567"})
+```
 You can also use the **csvquery.Operators** class instead of operator strings:
 ```python
 from csvquery import Operators
@@ -109,6 +113,7 @@ The general structure of a **filter_object** is as follows:
     }
 }
 ```
+
 **Valid operators**
  - **eq**: equals (cannot be combined with any other operator, including itself)
  - **neq**: not equal
@@ -135,6 +140,21 @@ voter_dataset = dataset.query({
     }
 })
 ```
+### Selecting fields
+You can use **Dataset.select([fields])** to receive a new dataset with only the specified fields:
+```python
+names_and_nationalities = people.select(["name", "nationality"])
+```
+
+If the **Dataset** is effectively one-dimensional either horizontally or vertically as a result of using **Dataset.query_one([filter_object])** or **Dataset.select([fields])**, you can use **Dataset.to_dictionary()** or **Dataset.to_list()**:
+```python
+texans = people.query({"state":"TX"}).select("name") # dataset is one column wide
+texan_names = texans.to_list()
+```
+```python
+john_doe = people.query_one({"phone":"555-123-4567"}) # dataset is one row high
+print(john_doe.to_dictionary()["address"])
+```
 
 ### Outputting data
 
@@ -155,15 +175,6 @@ To access the data directly as a two-dimensional array, just use the **data** at
 for row in voter_dataset.data:
     print(row[0])
     ...
-```
-If the **Dataset** is effectively one-dimensional either horizontally or vertically, you can use **Dataset.to_dictionary()** or **Dataset.to_list()**:
-```python
-texans = people.query({"state":"TX"})
-texan_names = texans.select("name").to_list()
-```
-```python
-john_doe = people.query_one({"phone":"555-123-4567"}).to_dictionary()
-print(john_doe["address"])
 ```
 
 ## More examples
