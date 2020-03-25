@@ -6,4 +6,4 @@ checklist
 ✓ relational data
 - better input sanitization
 - better naming conventions
-- update docs
+✓ update docs
