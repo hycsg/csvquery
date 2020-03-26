@@ -1,6 +1,17 @@
 from csvquery import Operators, Comparisons, open_csv
+import time, math
+from datetime import datetime
 
 today = "2020-03-23"
+
+# benchmark util
+def benchmark(func, start_func=lambda:0, times=5, digits=3):
+    start = time.time()
+    start_func()
+    for _ in range(times):
+        func()
+    elapsed = round(time.time() - start, digits)
+    print("elapsed time: "+str(elapsed).ljust(digits + 2, "0"))
 
 def usa_cases_date_range():
     dataset = open_csv("example_data/coronavirus_data.csv")
@@ -51,7 +62,7 @@ def print_diversity_info():
     dataset.index("asian_nh")
     dataset.print_table(dataset.column_names[2:])
 
-def relational_data(): # get all Directors from Redwood City
+def two_tables(): # get all Directors from Redwood City
     contacts = open_csv("example_data/relational/contacts.csv")
     addresses = open_csv("example_data/relational/addresses.csv")
     
@@ -64,4 +75,86 @@ def relational_data(): # get all Directors from Redwood City
     }).select(["name", "id"])
     redwood_directors.print_table()
 
-relational_data()
+def stats():
+    dataset = open_csv("example_data/coronavirus_data.csv")
+    cases_today = dataset.query({
+        "date": today,
+        "location": {
+            Operators.not_equal: "World"
+        }
+    }).index("date", Comparisons.get_date_comparison("%Y-%m-%d")).select("total_cases")
+    
+    cases_today.print_table()
+    print(cases_today.sum())
+    print(cases_today.count())
+    print(cases_today.average())
+
+def binary_vs_sequential(times = 5000):
+    dataset = open_csv("example_data/coronavirus_data.csv").query({"date":today})
+
+    print("\nWITHOUT INDEXING:")
+    benchmark(lambda: dataset.query({"total_cases":{"gt":100, "comparison":Comparisons.integers}}), lambda: 0, times)
+    print("\nWITH INDEXING:")
+    benchmark(lambda: dataset.query({"total_cases":{"gt":100}}), lambda: dataset.index("total_cases", Comparisons.integers), times)
+    print()
+
+    dataset.index("total_cases")
+
+def select_as():
+    dataset = open_csv("example_data/coronavirus_data.csv").query({"location":"United States"})
+    dataset.select_as({"total_cases":"cases", "date":"time"}).print_table()
+
+def rename():
+    dataset = open_csv("example_data/coronavirus_data.csv").query({"location":"United States"})
+    dataset.rename_fields({"total_cases":"cases"}).select(["date", "cases"]).print_table()
+
+def usa_or_uk():
+    dataset = open_csv("example_data/coronavirus_data.csv").query({
+        "location": {
+            "or": [
+                {Operators.equal: "United Kingdom"},
+                {Operators.equal: "United States"},
+            ]
+        },
+        "date": {
+            Operators.greater_than_or_equal: "2020-03-01",
+            Operators.less_than_or_equal: "2020-03-2",
+            Operators.comparison: Comparisons.get_date_comparison("%Y-%m-%d")
+        }
+    })
+    dataset.print_table()
+
+def short_date():
+    (
+    open_csv("example_data/coronavirus_data.csv")
+        .rename_fields({"total_cases":"cases"})
+        .query({"location":"United States", "cases":{"gt":10, "comparison":Comparisons.integers}})
+        .select(["date", "cases"])
+        .run("date", lambda d: datetime.strptime(d, "%Y-%m-%d").strftime("%m-%d"))
+        .print_table()
+    )
+
+def no_new_zealand():
+    (
+    open_csv("example_data/coronavirus_data.csv")
+        .query({"location":{"neq":"New Zealand"}})
+        .save_csv("output.csv")
+    )
+
+def new_column():
+    (
+    open_csv("example_data/coronavirus_data.csv")
+        .rename_fields({"total_cases":"cases"})
+        .query({"location":"United States", "cases":{"gt":10, "comparison":Comparisons.integers}})
+        .select(["date", "cases"])
+        .add_field("log(cases)", lambda row: str(round(math.log(float(row["cases"])), 3)).ljust(5, "0"))
+        .print_table()
+    )
+
+def join_tables():
+    contacts = open_csv("example_data/relational/contacts.csv").select(["location_id", "name", "title", "email"])
+    addresses = open_csv("example_data/relational/addresses.csv").select(["location_id", "postal_code"])
+    
+    contacts.join(addresses, "location_id").print_table().save_csv("output.csv")
+    
+short_date()
