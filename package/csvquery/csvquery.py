@@ -53,7 +53,7 @@ class Dataset:
     
     def index(self, column_name, comparison = Comparisons.default):
         if not column_name in self.column_names:
-            error_message("column '{0}' does not exist, skipping index".format(column_name))
+            error_message(f"Column \'{column_name}\' does not exist, skipping index")
             return self
 
         def quick_sort(column, low, high, comparison): 
@@ -77,7 +77,7 @@ class Dataset:
             return i+1
         
         if type(comparison) is not types.FunctionType:
-            error_message("indexing comparison is not a function, using default comparison instead")
+            error_message("Chosen comparison is not of type FunctionType, using default comparison instead")
             comparison = Comparisons.default
         
         sys.setrecursionlimit(10000)
@@ -156,7 +156,7 @@ class Dataset:
                     del conditions[operator]
 
             if(high_edge < low_edge or high_edge >= len(self.data) or low_edge < 0):
-                error_message("invalid bounds, returning empty dataset")
+                error_message("Binary Search: Invalid bounds, returning empty dataset")
                 return []
 
             return self.data[low_edge:high_edge]
@@ -174,7 +174,7 @@ class Dataset:
             for column_name, operations in query_object.items():
 
                 if not column_name in self.column_names:
-                    error_message("column '{0}' does not exist, skipping".format(column_name))
+                    error_message(f"column \'{column_name}\' does not exist, skipping")
                     continue
                 column_id = self.column_names.index(column_name)
 
@@ -182,12 +182,12 @@ class Dataset:
 
                     def get_comparator():
                         if not Operators.comparison in operations:
-                            error_message("comparison not specified for '{0}' filter, using default comparison".format(column_name))
+                            error_message(f"comparison not specified for \'{column_name}\' filter, using default comparison")
                             query_object[column_name]["comparison"] = Comparisons.default # so the message doesn't appear again
                             return Comparisons.default
                         comparator = operations[Operators.comparison]
                         if type(comparator) is not types.FunctionType:
-                            error_message("comparison for '{0}' filter is not a function, using default comparison instead".format(column_name))
+                            error_message(f"comparison for \'{column_name}\' filter is not a function, using default comparison instead")
                             query_object[column_name]["comparison"] = Comparisons.default
                             return Comparisons.default
                         return comparator
@@ -208,7 +208,7 @@ class Dataset:
                             deletions.append(i)
                             break
                     else:
-                        error_message("operator '{0}' does not exist, skipping".format(operator))
+                        error_message(f"operator \'{operator}\' does not exist, skipping")
 
                 if i in deletions:
                     break
@@ -228,7 +228,7 @@ class Dataset:
         column_ids = []
         for column_name in columns:
             if not column_name in self.column_names:
-                error_message("column '{0}' does not exist, skipping".format(column_name))
+                error_message(f"column \'{column_name}\' does not exist, skipping")
                 continue
             column_ids.append(self.column_names.index(column_name))
         
@@ -285,7 +285,7 @@ class Dataset:
         column_ids = []
         for column_name in columns:
             if not column_name in self.column_names:
-                error_message("column '{0}' does not exist, skipping".format(column_name))
+                error_message("Column \'{column_name}\' does not exist, skipping")
                 continue
             column_ids.append(self.column_names.index(column_name))
         
