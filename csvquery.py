@@ -41,13 +41,13 @@ class Dataset:
         if type(field_names) is str:
             field_names = [field_names]
         elif type(field_names) is not list and type(field_names) is not tuple:
-            error_message("the supplied list of fields is not a list nor a tuple")
+            error_message("Dataset.get_field_ids: parameter 'field_names' must be of type 'list' or 'tuple'")
             return []
         
         field_ids = []
         for field in field_names:
             if not field in self.fields:
-                error_message("field '{0}' does not exist, skipping".format(field))
+                error_message(f"Dataset.get_field_ids: field \'{field}\' does not exist, removing from 'field_names'")
                 field_names.remove(field)
                 continue
             field_ids.append(self.fields.index(field))
@@ -61,10 +61,10 @@ class Dataset:
 
     def already_indexed(self, field, comparison = Comparisons.default):
         if type(comparison) is not types.FunctionType:
-            error_message("the supplied comparison operator is not a function or lambda")
+            error_message("Dataset.already_indexed: parameter 'comparison' must be of type 'FunctionType'")
             return self
         if type(field) is not str:
-            error_message("the supplied field is not a string")
+            error_message("Dataset.already_indexed: parameter 'field' must be of type 'str'")
             return self
         
         self.indexed_field = field
@@ -72,14 +72,14 @@ class Dataset:
         return self
 
     def index(self, field, comparison = Comparisons.default):
-        if type(comparison) is not types.FunctionType:
-            error_message("the supplied comparison operator is not a function or lambda")
+        if type(comparison) is not types.FunctionType: # TODO should this be fatal? or just use default comparison?
+            error_message("Dataset.index: parameter 'comparison' must be of type 'FunctionType', halting indexing")
             return self
         if type(field) is not str:
-            error_message("the supplied field is not a string")
+            error_message("Dataset.index: parameter 'field' must be of type 'FunctionType', halting indexing")
             return self
         if not field in self.fields:
-            error_message("field '{0}' does not exist, skipping index".format(field))
+            error_message(f"Dataset.index: field \'{field}\' does not exist, halting indexing")
             return self
 
         def quick_sort(field, low, high, comparison): 
@@ -101,10 +101,6 @@ class Dataset:
             self.data[i+1], self.data[high] = self.data[high], self.data[i+1]
 
             return i+1
-        
-        if type(comparison) is not types.FunctionType:
-            error_message("indexing comparison is not a function, using default comparison instead")
-            comparison = Comparisons.default
         
         sys.setrecursionlimit(10000)
         quick_sort(self.fields.index(field), 0, len(self.data)-1, comparison)
@@ -178,7 +174,7 @@ class Dataset:
                     del conditions[operator]
 
             if(high_edge < low_edge or high_edge >= len(self.data) or low_edge < 0):
-                error_message("invalid bounds, returning empty dataset")
+                error_message("Dataset.query.double_binary_search: Invalid high/low bounds, returning empty dataset")
                 return []
             
             if low_edge == high_edge:
@@ -199,7 +195,7 @@ class Dataset:
             for field, operations in query_object.items():
 
                 if not field in self.fields:
-                    error_message("field '{0}' does not exist, skipping".format(field))
+                    error_message(f"Dataset.query: field \'{field}\' does not exist, skipping")
                     continue
                 field_id = self.fields.index(field)
 
@@ -207,12 +203,12 @@ class Dataset:
 
                     def get_comparator(t, v):
                         if not Operators.comparison in operations:
-                            error_message("comparison not specified for '{0}' filter, using default comparison".format(field))
+                            error_message(f"Dataset.query.get_comparator: comparison not specified for \'{field}\' filter, using default comparison")
                             query_object[field]["comparison"] = Comparisons.default # so the message doesn't appear again
                             return Comparisons.default(t, v)
                         comparator = operations[Operators.comparison]
                         if type(comparator) is not types.FunctionType:
-                            error_message("comparison for '{0}' filter is not a function, using default comparison instead".format(field))
+                            error_message(f"Dataset.query.get_comparator: comparison for \'{field}\' filter is not of type 'FunctionType', using default comparison instead")
                             query_object[field]["comparison"] = Comparisons.default
                             return Comparisons.default(t, v)
                         return comparator(t, v)
@@ -237,7 +233,7 @@ class Dataset:
                             deletions.append(i)
                             break
                     else:
-                        error_message("operator '{0}' does not exist, skipping".format(operator))
+                        error_message("Dataset.query: operator \'{operator}\' does not exist, skipping")
 
                 if i in deletions:
                     break
@@ -351,17 +347,17 @@ class Dataset:
 
     def to_dictionary(self):
         if len(self.data) > 1:
-            error_message("this is not a single-row dataset, using first row")
+            error_message("Dataset.to_dictionary: Not a single-row dataset, using first row")
         elif len(self.data) == 0:
-            error_message("cannot convert dataset to dictionary, dataset is empty")
+            error_message("Dataset.to_dictionary: Empty dataset, cannot convert dataset to dictionary")
             return {}
         return self.row_to_dict(self.data[0])
 
     def to_list(self):
         if len(self.fields) > 1:
-            error_message("this is not a single-field dataset, using first field")
+            error_message("Dataset.to_list: Not a single-field dataset, using first field")
         elif len(self.fields) == 0:
-            error_message("cannot convert dataset to list, dataset is empty")
+            error_message("Dataset.to_list: Empty dataset, cannot convert dataset to list")
             return []
         array = []
         for row in self.data:
