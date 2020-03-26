@@ -1,4 +1,4 @@
-import sys, math, types, csv, copy, concurrent.futures
+import sys, math, types, csv, copy, concurrent.futures, requests
 from datetime import datetime
 
 
@@ -458,17 +458,25 @@ class Dataset:
 
         return self
 
-def open_csv(filepath, delimiter=","):
+def parse_csv(iterator, delimiter=","):
     dataset = Dataset()
-    csv_file = open(filepath, "r")
-    csv_reader = csv.reader(csv_file, delimiter=delimiter)
+    csv_reader = csv.reader(iterator, delimiter=delimiter)
     for line, row in enumerate(csv_reader):
         if line == 0:
             dataset.fields = row
         else:
             dataset.data.append(row)
+    return dataset
+
+def open_csv(filepath, delimiter=","):
+    csv_file = open(filepath, "r")
+    dataset = parse_csv(csv_file, delimiter)
     csv_file.close()
     return dataset
+
+def get_csv(url, delimiter=","):
+    text = requests.get(url=url).text
+    return parse_csv(text.split("\n"))
 
 def error_message(msg):
     print("[super_csv] ERROR: "+msg)

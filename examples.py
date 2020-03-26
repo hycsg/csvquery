@@ -1,4 +1,4 @@
-from csvquery import Operators, Comparisons, open_csv
+from csvquery import *
 import time, math
 from datetime import datetime
 
@@ -161,5 +161,13 @@ def join_tables():
     )
     
     contacts.join(addresses, "location_id").print_table()
+
+def online():
+    data = get_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/03-25-2020.csv")
+    houston = data.already_indexed("Admin2", Comparisons.strings).query_one({
+        "Admin2":"Harris",
+        "Province_State":"Texas"
+    })
+    print(houston.to_dictionary())
     
-join_tables()
+online()
