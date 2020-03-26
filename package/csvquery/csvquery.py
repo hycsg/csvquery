@@ -460,6 +460,8 @@ def parse_csv(iterator, delimiter=","):
     for line, row in enumerate(csv_reader):
         if line == 0:
             dataset.fields = row
+        elif row == []:
+            continue
         else:
             dataset.data.append(row)
     return dataset
