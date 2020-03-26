@@ -477,4 +477,4 @@ def get_csv(url, delimiter=","):
     return parse_csv(text.split("\n"))
 
 def error_message(msg):
-    print("[super_csv] ERROR: "+msg)
+    print("[csvquery] ERROR: "+msg)
