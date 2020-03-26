@@ -54,6 +54,9 @@ class Dataset:
         field_ids.sort()
         return field_ids
 
+    def row_to_dict(self, row):
+        return {field: row[i] for i, field in enumerate(self.fields)}
+
     # USER
 
     def already_indexed(self, field, comparison = Comparisons.default):
@@ -292,7 +295,7 @@ class Dataset:
             row.append(str(derivation(r)))
         self.fields.append(field)
         return self
-    
+
     def remove_fields(self, field_names):
         field_ids = self.get_field_ids(field_names)
         for x in reversed(range(len(field_ids))):
@@ -310,12 +313,21 @@ class Dataset:
                 self.fields[i] = field_names[f]
         return self
 
-    def run(self, field_names, function):
+    def replace(self, field_names, function):
         field_ids = self.get_field_ids(field_names)
 
         for r, row in enumerate(self.data):
             for i in field_ids:
                 row[i] = function(row[i])
+
+        return self
+
+    def replace_derived(self, field_names, function):
+        field_ids = self.get_field_ids(field_names)
+
+        for r, row in enumerate(self.data):
+            for i in field_ids:
+                row[i] = function(self.row_to_dict(row))
 
         return self
 
@@ -343,8 +355,7 @@ class Dataset:
         elif len(self.data) == 0:
             error_message("cannot convert dataset to dictionary, dataset is empty")
             return {}
-        row = self.data[0]
-        return {field: row[i] for i, field in enumerate(self.fields)}
+        return self.row_to_dict(self.data[0])
 
     def to_list(self):
         if len(self.fields) > 1:

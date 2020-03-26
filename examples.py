@@ -130,7 +130,7 @@ def short_date():
         .rename_fields({"total_cases":"cases"})
         .query({"location":"United States", "cases":{"gt":10, "comparison":Comparisons.integers}})
         .select(["date", "cases"])
-        .run("date", lambda d: datetime.strptime(d, "%Y-%m-%d").strftime("%m-%d"))
+        .replace("date", lambda d: datetime.strptime(d, "%Y-%m-%d").strftime("%m-%d"))
         .print_table()
     )
 
@@ -153,8 +153,13 @@ def new_column():
 
 def join_tables():
     contacts = open_csv("example_data/relational/contacts.csv").select(["location_id", "name", "title", "email"])
-    addresses = open_csv("example_data/relational/addresses.csv").select(["location_id", "postal_code"])
+    addresses = (
+    open_csv("example_data/relational/addresses.csv")
+        .add_field("full_address")
+        .replace_derived("full_address", lambda r: "{0} {1}, {2} {3}".format(r["address_1"], r["city"], r["state_province"], r["postal_code"]))
+        .select(["location_id", "full_address"])
+    )
     
-    contacts.join(addresses, "location_id").print_table().save_csv("output.csv")
+    contacts.join(addresses, "location_id").print_table()
     
-short_date()
+join_tables()

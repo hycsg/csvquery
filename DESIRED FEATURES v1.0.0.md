@@ -7,7 +7,8 @@ checklist
 ✓ rename_fields
 ✓ add_field
 ✓ remove_field
-✓ run
+✓ replace
+✓ replace_derived
 ✓ and, or, not
 ✓ relational data
     ✓ in
