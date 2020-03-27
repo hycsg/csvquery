@@ -347,7 +347,6 @@ class Dataset:
             common_fields = [common_fields] * 2
         for field in other_dataset.fields:
             if field == common_fields[1]: continue
-
             def match(row):
                 matched_row = other_dataset.query_one({
                     common_fields[1]: row[common_fields[0]]
@@ -356,6 +355,7 @@ class Dataset:
                     return matched_row.to_dictionary()[field]
                 else:
                     return ""
+            self.add_field(field, match)
 
         if remove:
             self.remove_fields(common_fields[0])

@@ -167,4 +167,4 @@ def country_count():
     countries = data.select_unique("location")
     print(countries.count())
 
-country_count()
+join_tables()
