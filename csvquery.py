@@ -233,7 +233,7 @@ class Dataset:
                             deletions.append(i)
                             break
                     else:
-                        error_message("Dataset.query: operator \'{operator}\' does not exist, skipping")
+                        error_message(f"Dataset.query: operator \'{operator}\' does not exist, skipping")
 
                 if i in deletions:
                     break
