@@ -162,12 +162,9 @@ def join_tables():
     
     contacts.join(addresses, "location_id").print_table()
 
-def online():
-    data = get_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/03-25-2020.csv")
-    houston = data.already_indexed("Admin2", Comparisons.strings).query_one({
-        "Admin2":"Harris",
-        "Province_State":"Texas"
-    })
-    print(houston.to_dictionary())
-    
-online()
+def country_count():
+    data = open_csv("example_data/coronavirus_data.csv")
+    countries = data.select_unique("location")
+    print(countries.count())
+
+country_count()
