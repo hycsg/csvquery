@@ -6,5 +6,3 @@ __pycache__
 *.egg-info
 build
 dist
-package/README.md
-package/csvquery/csvquery.py
