@@ -1,7 +1,6 @@
-import sys
-import math
-import types
-import csv
+import sys, math, types, csv, copy, concurrent.futures, requests
+from datetime import datetime
+
 
 class Operators:
     equal = "eq"
@@ -10,6 +9,10 @@ class Operators:
     greater_than = "gt"
     less_than_or_equal = "lte"
     greater_than_or_equal = "gte"
+    inside = "in"
+    _not = "not"
+    _and = "and"
+    _or = "or"
 
     comparison = "comparison"
 
@@ -18,57 +21,93 @@ class Comparisons:
     floats = lambda a, b: float(a) < float(b)
     strings = lambda a, b: a < b
 
-    @staticmethod
-    def get_date_comparison(format_string):
-        def compare_dates(format_string, a, b):
-            
-            #
-            # TODO
-            # 
-            # based on format_string, return True if a is earlier than b
-            #
-            # format_string examples:
-            # "YYYY-MM-DD"
-            # "MM/DD/YY"
-            # "YYYYYY::MM::DD::hh::mm::ss"
-            # 
-
-            return a < b
-        return lambda a, b: compare_dates(format_string, a, b)
-
-
     default = floats
+    
+    @staticmethod
+    def get_date_comparison(format_string):        
+        return lambda a, b: datetime.strptime(a, format_string) < datetime.strptime(b, format_string)
+       
+operator_functions = {
+    Operators.equal                 :   lambda t, v, c: t == v,
+    Operators.not_equal             :   lambda t, v, c: t != v,
+    Operators.less_than             :   lambda t, v, c: c(t, v),
+    Operators.greater_than          :   lambda t, v, c: c(v, t),
+    Operators.less_than_or_equal    :   lambda t, v, c: not c(v, t),
+    Operators.greater_than_or_equal :   lambda t, v, c: not c(t, v),
+    Operators.inside                :   lambda t, v, c: t in [str(x) for x in v],
+    Operators._not                  :   lambda t, v, c: not operator_functions[list(v)[0]](t, v[list(v)[0]], c),
+    Operators._and                  :   lambda t, v, c: not (False in [operator_functions[list(d)[0]](t, d[list(d)[0]], c) for d in v]),
+    Operators._or                   :   lambda t, v, c: True in [operator_functions[list(d)[0]](t, d[list(d)[0]], c) for d in v],
+}
 
 class Dataset:
+
+    # UTILITY
+
     def __init__(self):
         self.data = []
-        self.column_names = []
-        self.indexed_column = ""
+        self.fields = []
+        self.indexed_field = ""
         self.indexed_comparison = Comparisons.default
-    
-    def already_indexed(self, column_name, comparison = Comparisons.default):
-        self.indexed_column = column_name
+
+    def get_field_ids(self, field_names):
+        if type(field_names) is str:
+            field_names = [field_names]
+        elif type(field_names) is not list and type(field_names) is not tuple:
+            error_message("Dataset.get_field_ids: parameter 'field_names' must be of type 'list' or 'tuple'")
+            return []
+        
+        field_ids = []
+        for field in field_names:
+            if not field in self.fields:
+                error_message(f"Dataset.get_field_ids: field \'{field}\' does not exist, removing from 'field_names'")
+                field_names.remove(field)
+                continue
+            field_ids.append(self.fields.index(field))
+        field_ids.sort()
+        return field_ids
+
+    def row_to_dict(self, row):
+        return {field: row[i] for i, field in enumerate(self.fields)}
+
+    # USER
+
+    def already_indexed(self, field, comparison = Comparisons.default):
+        if type(comparison) is not types.FunctionType:
+            error_message("Dataset.already_indexed: parameter 'comparison' must be of type 'FunctionType'")
+            return self
+        if type(field) is not str:
+            error_message("Dataset.already_indexed: parameter 'field' must be of type 'str'")
+            return self
+        
+        self.indexed_field = field
         self.indexed_comparison = comparison
         return self
-    
-    def index(self, column_name, comparison = Comparisons.default):
-        if not column_name in self.column_names:
-            error_message("column '{0}' does not exist, skipping index".format(column_name))
+
+    def index(self, field, comparison = Comparisons.default):
+        if type(comparison) is not types.FunctionType: # TODO should this be fatal? or just use default comparison?
+            error_message("Dataset.index: parameter 'comparison' must be of type 'FunctionType', halting indexing")
+            return self
+        if type(field) is not str:
+            error_message("Dataset.index: parameter 'field' must be of type 'FunctionType', halting indexing")
+            return self
+        if not field in self.fields:
+            error_message(f"Dataset.index: field \'{field}\' does not exist, halting indexing")
             return self
 
-        def quick_sort(column, low, high, comparison): 
+        def quick_sort(field, low, high, comparison): 
             if low < high: 
-                p = partition(column, low, high, comparison)
+                p = partition(field, low, high, comparison)
         
-                quick_sort(column, low, p-1, comparison)
-                quick_sort(column, p+1, high, comparison)
+                quick_sort(field, low, p-1, comparison)
+                quick_sort(field, p+1, high, comparison)
         
-        def partition(column, low, high, comparison):
+        def partition(field, low, high, comparison):
             i = low-1
-            pivot = self.data[high][column]
+            pivot = self.data[high][field]
         
             for j in range(low, high):
-                if comparison(self.data[j][column], pivot):
+                if comparison(self.data[j][field], pivot):
                     i = i+1
                     self.data[i], self.data[j] = self.data[j], self.data[i]
             
@@ -76,41 +115,34 @@ class Dataset:
 
             return i+1
         
-        if type(comparison) is not types.FunctionType:
-            error_message("indexing comparison is not a function, using default comparison instead")
-            comparison = Comparisons.default
-        
         sys.setrecursionlimit(10000)
-        quick_sort(self.column_names.index(column_name), 0, len(self.data)-1, comparison)
-        self.indexed_column = column_name
+        quick_sort(self.fields.index(field), 0, len(self.data)-1, comparison)
+        self.indexed_field = field
         self.indexed_comparison = comparison
         
         return self
-    
-    def query(self, query_object=None):
 
-        if query_object == None:
+    def query(self, filter_object=None):
+        if filter_object == None:
             return self
-        
-        if type(query_object) is not dict:
+        if type(filter_object) is not dict:
             return Dataset()
-        
-        for column_name, operators in query_object.items():
+        for field, operators in filter_object.items():
             if type(operators) is not dict:
-                query_object[column_name] = {Operators.equal: operators}
+                filter_object[field] = {Operators.equal: operators}
 
-        def binary_search(key, conditions):
+        def double_binary_search(key, conditions):
 
-            def binary_edge_search(low, high, comparison, direction):
+            def binary_search(low, high, comparison, direction):
                 if low + 1 == high:
                     return high
                 lower_middle_index = math.floor((high+low)/2)
                 upper_middle_index = math.ceil((high+low)/2)
                 median = self.data[upper_middle_index][key]
                 if comparison(median) == direction:
-                    return binary_edge_search(lower_middle_index, high, comparison, direction)
+                    return binary_search(lower_middle_index, high, comparison, direction)
                 else:
-                    return binary_edge_search(low, upper_middle_index, comparison, direction)
+                    return binary_search(low, upper_middle_index, comparison, direction)
 
             lowest = 0
             highest = len(self.data) - 1
@@ -134,11 +166,10 @@ class Dataset:
                         else:
                             comparison_2 = comparison_1
 
-                        return_val = binary_edge_search(lowest, highest, comparison_2, comparator[0])
                         used_operators.append(operator)
-                        return return_val
+                        return binary_search(lowest, highest, comparison_2, comparator[0])
                 return default
-                
+
             low_edge = get_edge({
                 Operators.equal                 :   (True, False),
                 Operators.greater_than          :   (False, False),
@@ -156,59 +187,55 @@ class Dataset:
                     del conditions[operator]
 
             if(high_edge < low_edge or high_edge >= len(self.data) or low_edge < 0):
-                error_message("invalid bounds, returning empty dataset")
+                error_message("Dataset.query.double_binary_search: Invalid high/low bounds, returning empty dataset")
                 return []
+            
+            if low_edge == high_edge:
+                return [self.data[low_edge]]
 
             return self.data[low_edge:high_edge]
         
 
-        result_data = self.data
+        result_data = []
 
-        if self.indexed_column in query_object.keys():
-            result_data = binary_search(self.column_names.index(self.indexed_column), query_object[self.indexed_column])
+        if self.indexed_field in filter_object.keys():
+            result_data = double_binary_search(self.fields.index(self.indexed_field), filter_object[self.indexed_field])
+        else:
+            result_data = copy.deepcopy(self.data)
 
         deletions = []
 
         for i, row in enumerate(result_data):
 
-            for column_name, operations in query_object.items():
+            for field, operations in filter_object.items():
 
-                if not column_name in self.column_names:
-                    error_message("column '{0}' does not exist, skipping".format(column_name))
+                if not field in self.fields:
+                    error_message(f"Dataset.query: field \'{field}\' does not exist, skipping")
                     continue
-                column_id = self.column_names.index(column_name)
+                field_id = self.fields.index(field)
 
                 for operator, value in operations.items():
 
-                    def get_comparator():
+                    def get_comparator(t, v):
                         if not Operators.comparison in operations:
-                            error_message("comparison not specified for '{0}' filter, using default comparison".format(column_name))
-                            query_object[column_name]["comparison"] = Comparisons.default # so the message doesn't appear again
-                            return Comparisons.default
+                            error_message(f"Dataset.query.get_comparator: comparison not specified for \'{field}\' filter, using default comparison")
+                            filter_object[field]["comparison"] = Comparisons.default # so the message doesn't appear again
+                            return Comparisons.default(t, v)
                         comparator = operations[Operators.comparison]
                         if type(comparator) is not types.FunctionType:
-                            error_message("comparison for '{0}' filter is not a function, using default comparison instead".format(column_name))
-                            query_object[column_name]["comparison"] = Comparisons.default
-                            return Comparisons.default
-                        return comparator
-
-                    comparators = {
-                        Operators.equal                 :   lambda t, v: t == v,
-                        Operators.not_equal             :   lambda t, v: t != v,
-                        Operators.less_than             :   lambda t, v: get_comparator()(t, v),
-                        Operators.greater_than          :   lambda t, v: get_comparator()(v, t),
-                        Operators.less_than_or_equal    :   lambda t, v: not get_comparator()(v, t),
-                        Operators.greater_than_or_equal :   lambda t, v: not get_comparator()(t, v),
-                    }
+                            error_message(f"Dataset.query.get_comparator: comparison for \'{field}\' filter is not of type 'FunctionType', using default comparison instead")
+                            filter_object[field]["comparison"] = Comparisons.default
+                            return Comparisons.default(t, v)
+                        return comparator(t, v)
 
                     if operator == Operators.comparison:
                         continue
-                    elif operator in comparators:
-                        if not comparators[operator](row[column_id], value):
+                    elif operator in operator_functions:
+                        if not operator_functions[operator](row[field_id], value, get_comparator):
                             deletions.append(i)
                             break
                     else:
-                        error_message("operator '{0}' does not exist, skipping".format(operator))
+                        error_message(f"Dataset.query: operator \'{operator}\' does not exist, skipping")
 
                 if i in deletions:
                     break
@@ -218,22 +245,176 @@ class Dataset:
 
         result = Dataset()
         result.data = result_data
-        result.column_names = self.column_names
+        result.fields = self.fields
         return result
-    
-    def print_data(self, columns=None):
-        if columns == None:
-            columns = self.column_names
+
+    def query_one(self, filter_object=None):
+        dataset = self.query(filter_object)
+        if len(dataset.data) == 0:
+            return dataset
+        else:
+            dataset.data = [dataset.data[0]]
+            return dataset
+
+    def select(self, field_names=None):
+        if field_names == None:
+            field_names = self.fields
+
+        field_ids = self.get_field_ids(field_names)
+
+        selection = copy.deepcopy(self.data)
+
+        for row in selection:
+            for i in reversed(range(len(row))):
+                if not i in field_ids:
+                    row.pop(i)
+
+        dataset = Dataset()
+        dataset.fields = [self.fields[field_id] for field_id in field_ids]
+        dataset.data = selection
+        dataset.already_indexed(self.indexed_field, self.indexed_comparison)
+        return dataset
+
+    def select_as(self, field_names=None):
+        if field_names == None:
+            field_names = {}
         
-        column_ids = []
-        for column_name in columns:
-            if not column_name in self.column_names:
-                error_message("column '{0}' does not exist, skipping".format(column_name))
-                continue
-            column_ids.append(self.column_names.index(column_name))
+        dataset = self.select(list(field_names)).rename_fields(field_names)
+
+        if not dataset.indexed_field in dataset.fields:
+            dataset.indexed_field = ""
+            dataset.indexed_comparison = Comparisons.default
+
+        return dataset
+
+    def select_unique(self, field):
+        selection = self.select(field)
+
+        occurences = []
+        deletions = []
+        for i, row in enumerate(selection.data):
+            if row[0] in occurences:
+                deletions.append(i)
+            else:
+                occurences.append(row[0])
+        for i in reversed(range(len(deletions))):
+            del selection.data[deletions[i]]
         
-        column_widths = {}
-        for i in column_ids:
+        return selection
+
+    def add_field(self, field, derivation=lambda r:""):
+        for row in self.data:
+            r = {f: row[self.fields.index(f)] for f in self.fields}
+            row.append(str(derivation(r)))
+        self.fields.append(field)
+        return self
+
+    def remove_fields(self, field_names):
+        field_ids = self.get_field_ids(field_names)
+        for x in reversed(range(len(field_ids))):
+            i = field_ids[x]
+            for row in self.data:
+                del row[i]
+            del self.fields[i]
+        return self
+
+    def rename_fields(self, field_names):
+        for i, f in enumerate(self.fields):
+            if f in field_names:
+                if self.fields[i] == self.indexed_field:
+                    self.indexed_field = field_names[f]
+                self.fields[i] = field_names[f]
+        return self
+
+    def replace(self, field_names, function):
+        field_ids = self.get_field_ids(field_names)
+
+        for r, row in enumerate(self.data):
+            for i in field_ids:
+                row[i] = function(row[i])
+
+        return self
+
+    def replace_derived(self, field_names, derivation):
+        field_ids = self.get_field_ids(field_names)
+
+        for r, row in enumerate(self.data):
+            for i in field_ids:
+                row[i] = derivation(self.row_to_dict(row))
+
+        return self
+
+    def join(self, other_dataset, common_fields, remove=True):
+        if type(common_fields) is str:
+            common_fields = [common_fields] * 2
+        for field in other_dataset.fields:
+            if field == common_fields[1]: continue
+            def match(row):
+                matched_row = other_dataset.query_one({
+                    common_fields[1]: row[common_fields[0]]
+                })
+                if matched_row.count() > 0:
+                    return matched_row.to_dictionary()[field]
+                else:
+                    return ""
+            self.add_field(field, match)
+
+        if remove:
+            self.remove_fields(common_fields[0])
+        return self
+
+    def to_dictionary(self):
+        if len(self.data) > 1:
+            error_message("Dataset.to_dictionary: Not a single-row dataset, using first row")
+        elif len(self.data) == 0:
+            error_message("Dataset.to_dictionary: Empty dataset, cannot convert dataset to dictionary")
+            return {}
+        return self.row_to_dict(self.data[0])
+
+    def to_list(self):
+        if len(self.fields) > 1:
+            error_message("Dataset.to_list: Not a single-field dataset, using first field")
+        elif len(self.fields) == 0:
+            error_message("Dataset.to_list: Empty dataset, cannot convert dataset to list")
+            return []
+        array = []
+        for row in self.data:
+            array.append(row[0])
+        return array
+
+    def count(self, field_names=None):
+        if field_names == None:
+            return len(self.data)
+
+        field_ids = self.get_field_ids(field_names)
+
+        n = 0
+        for row in self.data:
+            null = False
+            for i in field_ids:
+                if row[i] == "":
+                    null = True
+                    break
+            if not null:
+                n += 1
+        
+        return n
+
+    def sum(self, field_name=None):
+        values = self.select(field_name).to_list()
+        return sum([float(x) for x in values])
+
+    def average(self, field_name=None):
+        values = self.select(field_name).to_list()
+        return sum([float(x) for x in values]) / len(values)
+
+    def print_table(self, field_names=None):
+        if field_names != None:
+            self.select(field_names).print_table()
+            return self
+
+        column_widths = []
+        for i, field in enumerate(self.fields):
             max_width = 0
 
             for row in self.data:
@@ -241,15 +422,15 @@ class Dataset:
                 if width > max_width:
                     max_width = width
 
-            title_width = len(self.column_names[i])
+            title_width = len(field)
             if(title_width > max_width):
                 max_width = title_width
             
-            column_widths[i] = max_width
+            column_widths.append(max_width)
 
         def print_bar(c="-"):
             print("+", end="")
-            for i in column_ids:
+            for i in range(len(self.fields)):
                 print("".rjust(column_widths[i]+2, c), end="+")
             print()
         
@@ -257,7 +438,7 @@ class Dataset:
             if title:
                 print_bar("=")
             print("|", end="")
-            for i in column_ids:
+            for i in range(len(self.fields)):
                 adjusted = ""
                 if title:
                     adjusted = row[i].center(column_widths[i])
@@ -271,48 +452,47 @@ class Dataset:
                 print_bar()
         
         print()
-        print_row(self.column_names, True)
+        print_row(self.fields, True)
         for row in self.data:
             print_row(row, False)
         print()
 
         return self
-    
-    def save_csv(self, filepath, delimiter=",", columns=None):
-        if columns == None:
-            columns = self.column_names
+
+    def save_csv(self, filepath, delimiter=",", field_names=None):
+        if field_names != None:
+            self.select(field_names).save_csv(filepath, delimiter)
+            return self
         
-        column_ids = []
-        for column_name in columns:
-            if not column_name in self.column_names:
-                error_message("column '{0}' does not exist, skipping".format(column_name))
-                continue
-            column_ids.append(self.column_names.index(column_name))
-        
-        csv_file = open(filepath, "w")
-        print(delimiter.join(columns), file=csv_file)
-        for row in self.data:
-            for i in column_ids:
-                if i == column_ids[-1]:
-                    print(row[i], file=csv_file)
-                else:
-                    print(row[i], file=csv_file, end=delimiter)
+        csv_file = open(filepath, "w", newline='')
+        csv_writer = csv.writer(csv_file, delimiter=delimiter)
+        csv_writer.writerow(self.fields)
+        csv_writer.writerows(self.data)
         csv_file.close()
 
         return self
 
-
-def open_csv(filepath, delimiter=","):
+def parse_csv(iterator, delimiter=","):
     dataset = Dataset()
-    csv_file = open(filepath, "r")
-    csv_reader = csv.reader(csv_file, delimiter=delimiter)
+    csv_reader = csv.reader(iterator, delimiter=delimiter)
     for line, row in enumerate(csv_reader):
         if line == 0:
-            dataset.column_names = row
+            dataset.fields = row
+        elif row == []:
+            continue
         else:
             dataset.data.append(row)
+    return dataset
+
+def open_csv(filepath, delimiter=","):
+    csv_file = open(filepath, "r")
+    dataset = parse_csv(csv_file, delimiter)
     csv_file.close()
     return dataset
 
+def get_csv(url, delimiter=","):
+    text = requests.get(url=url).text
+    return parse_csv(text.split("\n"))
+
 def error_message(msg):
-    print("[super_csv] ERROR: "+msg)
+    print("[csvquery] ERROR: "+msg)
