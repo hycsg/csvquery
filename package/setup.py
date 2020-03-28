@@ -5,10 +5,10 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="csvquery",
-    version="1.1.0",
+    version="1.1.1",
     author="Houston Youth Computer Science Group",
     author_email="houstoncsgroup@gmail.com",
-    description="A versatile python package that allows you to execute MongoDB-style queries on CSV files.",
+    description="A versatile python package that allows you to execute MongoDB-style queries on CSV files and interact with it like an SQL table.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/hycsg/csvquery",

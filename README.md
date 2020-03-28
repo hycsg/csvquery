@@ -1,6 +1,6 @@
 # csvquery
 
-A versatile python package that allows you to execute MongoDB-style queries on CSV files.
+A versatile python package that allows you to execute MongoDB-style queries on CSV files and interact with it like an SQL table.
 
 ## Downloading
 
