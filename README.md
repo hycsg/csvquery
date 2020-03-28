@@ -331,7 +331,7 @@ voter_dataset.save_csv("output.csv", ";", ["name", "age"])
 
 ## More examples
 
-### SQL translation
+### SQL equivalent
 
 #### Classic SQL query
 
