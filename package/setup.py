@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="csvquery",
-    version="1.0.5",
+    version="1.1.0",
     author="Houston Youth Computer Science Group",
     author_email="houstoncsgroup@gmail.com",
     description="A versatile python package that allows you to execute MongoDB-style queries on CSV files.",
