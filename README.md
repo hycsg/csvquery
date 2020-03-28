@@ -1,5 +1,7 @@
 # csvquery
 
+A versatile python package that allows you to execute MongoDB-style queries on CSV files.
+
 ## Downloading
 
 ```
@@ -8,7 +10,7 @@ pip install csvquery
 
 ## Package contents
 
-### open_csv(path[, delimiter=","])
+### open_csv(str path[, str delimiter = ","])
 Produces a **Dataset** from a CSV file:
 ```python
 from csvquery import open_csv
@@ -16,7 +18,7 @@ from csvquery import open_csv
 dataset = open_csv("path/to/file.csv")
 ```
 
-### get_csv(url[, delimiter=","])
+### get_csv(str url[, str delimiter = ","])
 Produces a **Dataset** from a URL:
 ```python
 from csvquery import get_csv
@@ -24,7 +26,7 @@ from csvquery import get_csv
 dataset = get_csv("http://example.com/api/data.csv")
 ```
 
-### parse_csv(string[, delimiter=","])
+### parse_csv(str string[, str delimiter = ","])
 Produces a **Dataset** from a string:
 ```python
 from csvquery import parse_csv
@@ -42,16 +44,16 @@ Stores all the valid query operator keywords. Using this class is optional as yo
 
 #### Attributes
 
-**equal** = "eq"
-**not_equal** = "neq"
-**less_than** = "lt"
-**greater_than** = "gt"
-**less_than_or_equal** = "lte"
-**greater_than_or_equal** = "gte"
-**inside** = "in"
-**_not** = "not"
-**_and** = "and"
-**_or** = "or"
+- **equal** = "eq"
+- **not_equal** = "neq"
+- **less_than** = "lt"
+- **greater_than** = "gt"
+- **less_than_or_equal** = "lte"
+- **greater_than_or_equal** = "gte"
+- **inside** = "in"
+- **_not** = "not"
+- **_and** = "and"
+- **_or** = "or"
 
 
 
@@ -80,9 +82,12 @@ A lambda function to compare strings alphabetically.
 data.index("name", Comparisons.strings)
 ```
 
+##### default
+An alias for the **floats** comparison.
+
 #### Methods
 
-##### get_date_comparison(format_string)
+##### get_date_comparison(str format_string)
 Returns a function that compares dates based on the format string. See https://strftime.org/ for a list of all valid date codes.
 ```python
 data.index("date", Comparisons.get_date_comparison("%Y-%m-%d"))
@@ -115,8 +120,8 @@ for field in voter_dataset.fields:
 
 ### Methods
 
-#### index(field[, comparison_operation])
-Sort the rows of data based on the values in a specified field. Sorting the data is optional, but doing so allows you to do binary searches which have a time complexity of just **O(log(n))**. The **comparison_operation** parameter must be a function that returns **True** when the first argument is less than the second argument, and **False** if otherwise. Import **Comparisons** for some common comparison operations. By default, the **comparison_operation** is a floating-point comparison.
+#### index(str field[, func comparison_operation = Comparisons.default])
+Sort the rows of data based on the values in a specified field. Sorting the data is optional, but doing so allows you to do binary searches which have a time complexity of just **O(log(n))**. The **comparison_operation** argument must be a function that returns **True** when the first argument is less than the second argument, and **False** if otherwise. Import **Comparisons** for some common comparison operations. By default, the **comparison_operation** is a floating-point comparison.
 ```python
 from csvquery import open_csv, Comparisons
 
@@ -128,7 +133,7 @@ You can also make your own comparison operator.
 dataset.index("age", lambda a, b: a**2 < b**2)
 ```
 
-#### already_indexed(field[, comparison_operation])
+#### already_indexed(str field[, func comparison_operation = Comparisons.default])
 Specifies that the data is already sorted by a certain field, allowing binary searches without re-sorting.
 ```python
 from csvquery import open_csv, Comparisons
@@ -137,7 +142,7 @@ dataset = open_csv("people.csv")
 dataset.already_indexed("name", Comparisons.strings)
 ```
 
-#### query(filter_object)
+#### query(dict filter_object)
 Returns all rows that match the **filter_object** as another **Dataset**.
 ```python
 from csvquery import open_csv
@@ -151,22 +156,6 @@ voter_dataset = dataset.query({
     },
     "citizenship" {   # this will run after the binary search to filter the narrowed-down data
         "eq": "USA"   # people will only pass this filter if their "citizenship" field is equal to "USA"
-    }
-})
-```
-
-#### query_one(filter_object)
-Returns the first row that matches the **filter_object** as a **Dataset**:
-```python
-john_doe = people_dataset.query_one({"phone":"555-123-4567"})
-```
-You can also use the **csvquery.Operators** class instead of operator strings:
-```python
-from csvquery import Operators
-
-voters_named_john = voter_dataset.query({
-    "name": {
-        "eq" : "John"
     }
 })
 ```
@@ -191,6 +180,16 @@ The general structure of a **filter_object** is as follows:
     }
 }
 ```
+You can also use the **csvquery.Operators** class instead of operator strings:
+```python
+from csvquery import Operators
+
+voters_named_john = voter_dataset.query({
+    "name": {
+        Operators.eq : "John"
+    }
+})
+```
 If you want to use a comparison operator like **gt** or **lte** on a column that was not indexed, you need to provide a comparison operator in the **filter_object** like so:
 ```python
 from csvquery import open_csv, Operations, Comparisons
@@ -209,27 +208,83 @@ voter_dataset = dataset.query({
 })
 ```
 
-#### select(fields)
-Returns the a new **Dataset** object with only the specified fields.
+#### query_one(dict filter_object)
+Returns the first row that matches the **filter_object** as a **Dataset**:
 ```python
-names_and_nationalities = people.select(["name", "nationality"])
+john_doe = people_dataset.query_one({"phone":"555-123-4567"})
 ```
 
-#### select_as(fields)
+#### select(list fields)
+Returns the a new **Dataset** object with only the specified fields.
+```python
+names_and_ages = people.select(["name", "age"])
+```
 
-#### select_unique(field)
+#### select_as(dict fields)
+Returns the a new **Dataset** object with only the specified fields, except the fields are renamed according to the **fields** dictionary.
+```python
+names_and_ages = people.select_as({
+    "first_and_last_name": "name",
+    "years_of_oldness": "age"
+})
+```
 
-#### add_field(field[, derivation])
+#### select_unique(str field)
+Returns a new **Dataset** object with only the specified field, and removes any duplicate values so that each value is unique.
+```python
+names = people.select_unique("name")
+```
 
-#### remove_fields(fields)
+#### add_field(str field[, func derivation = lambda r:""])
+Adds another field with the specified name. By default, the field will be filled with blank values.
+```python
+people.add_field("status")
+```
+You can optionally specify a function that takes the data in that row as a dictionary and outputs the new derived value per row.
+```python
+people.add_field("full_name", lambda row: row["first_name"] + " " + row["last_name"]])
+```
 
-#### rename_fields(fields)
+#### remove_fields(list fields)
+Removes the specified fields from the **Dataset**.
+```python
+people.remove_fields(["status", "full_name"])
+```
 
-#### replace(fields, function)
+#### rename_fields(dict fields)
+Renames fields according to the **fields** dictionary argument.
+```python
+people.rename_fields({
+    "first_and_last_name": "name",
+    "years_of_oldness": "age"
+})
+```
 
-#### replace_derived(fields, derivation)
+#### replace(list fields, func function)
+Replaces the values in the specified **fields** list argument using the **function** argument, which takes the current value as input and outputs the new value.
+```python
+people.replace(["first name", "last name"], lambda v: v.lower()) # makes all "first name" and "last name" values lower case
+```
 
-#### join(other_dataset, common_fields[, remove])
+#### replace_derived(list fields, func derivation)
+Replaces the values in the specified **fields** list argument using the **function** argument, which takes the row as a dictionary as input and outputs the new value.
+```python
+def birthday_to_age(row):
+    bday = datetime.strptime(row["date_of_birth"], "%Y-%m-%d")
+    today = datetime.today()
+    return today.year - born.year - ((today.month, today.day) < (born.month, born.day))
+
+people.replace_derived(["age"], birthday_to_age)
+```
+
+#### join(Dataset other_dataset, list common_fields[, bool remove = True])
+Adds fields from **other_dataset** to this **Dataset** and matches the rows by referencing the **common_fields** list argument. The **common_fields** list must have the field from the current **Dataset** and the field from the other **Dataset** in that order. By default, this method will remove the common field after the operation, but you can prevent this by setting the **remove** argument to **False**.
+```python
+locations = open_csv("locations.csv") # has an id field
+people = open_csv("people.csv") # has a location_id field that matches people to locations
+
+people.join(locations, ["location_id", "id"])
+```
 
 #### to_dictionary()
 Returns a the data as a dictionary if the **Dataset** has only one row (as a result of a **query_one** operation, for example).
@@ -245,8 +300,8 @@ texans = people.query({"state":"TX"}).select("name") # dataset is one column wid
 texan_names = texans.to_list()
 ```
 
-#### count([fields])
-If the **fields** parameter is left blank, returns the number of rows in the **Dataset**.
+#### count([list fields])
+If the **fields** argument is left blank, returns the number of rows in the **Dataset**.
 ```python
 number_of_people = people.count()
 ```
@@ -255,19 +310,19 @@ If otherwise, returns the number of rows in which the all of the specified field
 number_of_with_jobs = people.count(["job"]) # assuming the "job" field is left blank for unemployed people
 ```
 
-#### sum(field)
+#### sum(str field)
 Returns a sum of all the values in that field.
 ```python
 total_net_worth = people.sum("net_worth")
 ```
 
-#### average(field)
+#### average(str field)
 Returns a average of all the values in that field.
 ```python
 average_net_worth = people.average("net_worth")
 ```
 
-#### print_table([fields])
+#### print_table([list fields])
 Outputs your data to the console in a nice table.
 ```python
 voter_dataset.print_table()
@@ -277,27 +332,25 @@ You can optionally specify which columns to print.
 voter_dataset.print_table(["name", "age"])
 ```
 
-#### save_csv(filepath[, delimiter[, fields]])
-Saves the **Dataset** to a file.
+#### save_csv(str filepath[, str delimiter = ","[, fields = <all>]])
+Saves the **Dataset** to a file. If no fields are specified, all fields will be saved.
 ```python
 voter_dataset.save_csv("output.csv", ";", ["name", "age"])
 ```
 
 
+## More examples
 
+### SQL translation
 
-# More examples
-
-## SQL translation
-
-### Classic SQL query
+#### Classic SQL query
 
 ```sql
 SELECT name, age FROM people
 WHERE age >= 18 AND citizenship = "USA";
 ```
 
-### Python MongoDB-style query
+#### Python MongoDB-style query
 
 ```python
 voters = people.query({
@@ -308,21 +361,21 @@ voters = people.query({
 }).select(["name", "age"])
 ```
 
-## Printing certain columns
+### Printing certain columns
 
 ```python
 dataset = open_csv("people.csv")
 dataset.print_table(dataset.fields[2:5])
 ```
 
-## Rewriting a CSV file with fewer columns and a different delimiter
+### Rewriting a CSV file with fewer columns and a different delimiter
 
 ```python
 dataset = open_csv("people.csv")
 dataset.save_csv("people.csv", ";", dataset.fields[2:5])
 ```
 
-## The "eq" operator is optional
+### The "eq" operator is optional in the top level of the dictionary
 
 ```python
 dataset = csvquery.open_csv("people.csv")
@@ -331,13 +384,13 @@ dataset.query({
 })
 ```
 
-## Selecting one field
+### Selecting one field
 
 ```python
 people.select("name") # doesn't need to be a list if it's just one
 ```
 
-## Chaining
+### Chaining
 
 ```python
 (
