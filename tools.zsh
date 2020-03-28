@@ -24,6 +24,7 @@ case "$1" in
     echo "Usage:"
     echo "  $0 prepare_upload     --->   Copy all the necessary files into the packing directory"
     echo "  $0 upload             --->   CAUTION: Publishes package to PyPi"
+    echo "WARNING: '$0 upload' DOES NOT COPY ALL FILES INTO packaging dir"
   ;;
 
 esac
