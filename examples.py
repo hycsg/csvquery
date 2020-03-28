@@ -136,7 +136,7 @@ def short_date():
 
 def no_new_zealand():
     (
-    open_csv("example_data/coronavirus_data.csv")
+    open_csv("example_datafilter_object.csv")
         .query({"location":{"neq":"New Zealand"}})
         .save_csv("output.csv")
     )

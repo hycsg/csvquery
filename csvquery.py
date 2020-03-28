@@ -122,14 +122,14 @@ class Dataset:
         
         return self
 
-    def query(self, query_object=None):
-        if query_object == None:
+    def query(self, filter_object=None):
+        if filter_object == None:
             return self
-        if type(query_object) is not dict:
+        if type(filter_object) is not dict:
             return Dataset()
-        for field, operators in query_object.items():
+        for field, operators in filter_object.items():
             if type(operators) is not dict:
-                query_object[field] = {Operators.equal: operators}
+                filter_object[field] = {Operators.equal: operators}
 
         def double_binary_search(key, conditions):
 
@@ -196,16 +196,18 @@ class Dataset:
             return self.data[low_edge:high_edge]
         
 
-        result_data = copy.deepcopy(self.data)
+        result_data = []
 
-        if self.indexed_field in query_object.keys():
-            result_data = double_binary_search(self.fields.index(self.indexed_field), query_object[self.indexed_field])
+        if self.indexed_field in filter_object.keys():
+            result_data = double_binary_search(self.fields.index(self.indexed_field), filter_object[self.indexed_field])
+        else:
+            result_data = copy.deepcopy(self.data)
 
         deletions = []
 
         for i, row in enumerate(result_data):
 
-            for field, operations in query_object.items():
+            for field, operations in filter_object.items():
 
                 if not field in self.fields:
                     error_message(f"Dataset.query: field \'{field}\' does not exist, skipping")
@@ -217,12 +219,12 @@ class Dataset:
                     def get_comparator(t, v):
                         if not Operators.comparison in operations:
                             error_message(f"Dataset.query.get_comparator: comparison not specified for \'{field}\' filter, using default comparison")
-                            query_object[field]["comparison"] = Comparisons.default # so the message doesn't appear again
+                            filter_object[field]["comparison"] = Comparisons.default # so the message doesn't appear again
                             return Comparisons.default(t, v)
                         comparator = operations[Operators.comparison]
                         if type(comparator) is not types.FunctionType:
                             error_message(f"Dataset.query.get_comparator: comparison for \'{field}\' filter is not of type 'FunctionType', using default comparison instead")
-                            query_object[field]["comparison"] = Comparisons.default
+                            filter_object[field]["comparison"] = Comparisons.default
                             return Comparisons.default(t, v)
                         return comparator(t, v)
 
@@ -246,8 +248,8 @@ class Dataset:
         result.fields = self.fields
         return result
 
-    def query_one(self, query_object=None):
-        dataset = self.query(query_object)
+    def query_one(self, filter_object=None):
+        dataset = self.query(filter_object)
         if len(dataset.data) == 0:
             return dataset
         else:
@@ -333,12 +335,12 @@ class Dataset:
 
         return self
 
-    def replace_derived(self, field_names, function):
+    def replace_derived(self, field_names, derivation):
         field_ids = self.get_field_ids(field_names)
 
         for r, row in enumerate(self.data):
             for i in field_ids:
-                row[i] = function(self.row_to_dict(row))
+                row[i] = derivation(self.row_to_dict(row))
 
         return self
 
