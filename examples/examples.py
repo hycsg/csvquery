@@ -14,7 +14,7 @@ def benchmark(func, start_func=lambda:0, times=5, digits=3):
     print("elapsed time: "+str(elapsed).ljust(digits + 2, "0"))
 
 def usa_cases_date_range():
-    dataset = open_csv("example_data/coronavirus_data.csv")
+    dataset = open_csv("data/coronavirus_data.csv")
     dataset.already_indexed("location", Comparisons.strings)
     result = dataset.query({
         "location": "United States",
@@ -28,7 +28,7 @@ def usa_cases_date_range():
 
 def usa_cases_today():
     (
-    open_csv("example_data/coronavirus_data.csv")
+    open_csv("data/coronavirus_data.csv")
         .already_indexed("location", Comparisons.strings)
         .query({
             "location": "United States"
@@ -42,7 +42,7 @@ def usa_cases_today():
     )
 
 def more_than_1000_cases_today():
-    dataset = open_csv("example_data/coronavirus_data.csv")
+    dataset = open_csv("data/coronavirus_data.csv")
     result = dataset.query({
         "total_cases": {
             Operators.greater_than: 1000,
@@ -58,13 +58,13 @@ def save_more_than_1000_cases_today():
     more_than_1000_cases_today().select(["location","total_cases"]).save_csv("output.csv", ";")
 
 def print_diversity_info():
-    dataset = open_csv("example_data/census_diversity.csv", ";")
+    dataset = open_csv("data/census_diversity.csv", ";")
     dataset.index("asian_nh")
     dataset.print_table(dataset.column_names[2:])
 
 def two_tables(): # get all Directors from Redwood City
-    contacts = open_csv("example_data/relational/contacts.csv")
-    addresses = open_csv("example_data/relational/addresses.csv")
+    contacts = open_csv("data/relational/contacts.csv")
+    addresses = open_csv("data/relational/addresses.csv")
     
     redwood_ids = addresses.query({"city":"Redwood City"}).select(["location_id"]).to_list()
     redwood_directors = contacts.query({
@@ -76,7 +76,7 @@ def two_tables(): # get all Directors from Redwood City
     redwood_directors.print_table()
 
 def stats():
-    dataset = open_csv("example_data/coronavirus_data.csv")
+    dataset = open_csv("data/coronavirus_data.csv")
     cases_today = dataset.query({
         "date": today,
         "location": {
@@ -90,7 +90,7 @@ def stats():
     print(cases_today.average())
 
 def binary_vs_sequential(times = 5000):
-    dataset = open_csv("example_data/coronavirus_data.csv").query({"date":today})
+    dataset = open_csv("data/coronavirus_data.csv").query({"date":today})
 
     print("\nWITHOUT INDEXING:")
     benchmark(lambda: dataset.query({"total_cases":{"gt":100, "comparison":Comparisons.integers}}), lambda: 0, times)
@@ -101,15 +101,15 @@ def binary_vs_sequential(times = 5000):
     dataset.index("total_cases")
 
 def select_as():
-    dataset = open_csv("example_data/coronavirus_data.csv").query({"location":"United States"})
+    dataset = open_csv("data/coronavirus_data.csv").query({"location":"United States"})
     dataset.select_as({"total_cases":"cases", "date":"time"}).print_table()
 
 def rename():
-    dataset = open_csv("example_data/coronavirus_data.csv").query({"location":"United States"})
+    dataset = open_csv("data/coronavirus_data.csv").query({"location":"United States"})
     dataset.rename_fields({"total_cases":"cases"}).select(["date", "cases"]).print_table()
 
 def usa_or_uk():
-    dataset = open_csv("example_data/coronavirus_data.csv").query({
+    dataset = open_csv("data/coronavirus_data.csv").query({
         "location": {
             "or": [
                 {Operators.equal: "United Kingdom"},
@@ -126,7 +126,7 @@ def usa_or_uk():
 
 def short_date():
     (
-    open_csv("example_data/coronavirus_data.csv")
+    open_csv("data/coronavirus_data.csv")
         .rename_fields({"total_cases":"cases"})
         .query({"location":"United States", "cases":{"gt":10, "comparison":Comparisons.integers}})
         .select(["date", "cases"])
@@ -136,14 +136,14 @@ def short_date():
 
 def no_new_zealand():
     (
-    open_csv("example_datafilter_object.csv")
+    open_csv("datafilter_object.csv")
         .query({"location":{"neq":"New Zealand"}})
         .save_csv("output.csv")
     )
 
 def new_column():
     (
-    open_csv("example_data/coronavirus_data.csv")
+    open_csv("data/coronavirus_data.csv")
         .rename_fields({"total_cases":"cases"})
         .query({"location":"United States", "cases":{"gt":10, "comparison":Comparisons.integers}})
         .select(["date", "cases"])
@@ -152,9 +152,9 @@ def new_column():
     )
 
 def join_tables():
-    contacts = open_csv("example_data/relational/contacts.csv").select(["location_id", "name", "title", "email"])
+    contacts = open_csv("data/relational/contacts.csv").select(["location_id", "name", "title", "email"])
     addresses = (
-    open_csv("example_data/relational/addresses.csv")
+    open_csv("data/relational/addresses.csv")
         .add_field("full_address")
         .replace_derived("full_address", lambda r: "{0} {1}, {2} {3}".format(r["address_1"], r["city"], r["state_province"], r["postal_code"]))
         .select(["location_id", "full_address"])
@@ -163,7 +163,7 @@ def join_tables():
     contacts.join(addresses, "location_id").print_table()
 
 def country_count():
-    data = open_csv("example_data/coronavirus_data.csv")
+    data = open_csv("data/coronavirus_data.csv")
     countries = data.select_unique("location")
     print(countries.count())
 
