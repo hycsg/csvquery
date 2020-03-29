@@ -22,7 +22,6 @@ case "$1" in
     update_pkg_dir $PROJ_DIR $PKG_DIR &&
       publish_pkg  $PKG_DIR &&
       clean        $PKG_DIR $PKG_NAME
-
     return $?
   ;;
 
