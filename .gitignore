@@ -4,5 +4,5 @@ architecture.svg
 __pycache__
 *.bat
 *.egg-info
-build
 dist
+package/build
