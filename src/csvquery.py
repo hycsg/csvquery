@@ -1,44 +1,7 @@
 import sys, math, types, csv, copy, concurrent.futures, requests
-from datetime import datetime
 
+from operators import Operators, Comparisons, operator_functions
 
-class Operators:
-    equal = "eq"
-    not_equal = "neq"
-    less_than = "lt"
-    greater_than = "gt"
-    less_than_or_equal = "lte"
-    greater_than_or_equal = "gte"
-    inside = "in"
-    _not = "not"
-    _and = "and"
-    _or = "or"
-
-    comparison = "comparison"
-
-class Comparisons:
-    integers = lambda a, b: int(a) < int(b)
-    floats = lambda a, b: float(a) < float(b)
-    strings = lambda a, b: a < b
-
-    default = floats
-    
-    @staticmethod
-    def get_date_comparison(format_string):        
-        return lambda a, b: datetime.strptime(a, format_string) < datetime.strptime(b, format_string)
-       
-operator_functions = {
-    Operators.equal                 :   lambda t, v, c: t == v,
-    Operators.not_equal             :   lambda t, v, c: t != v,
-    Operators.less_than             :   lambda t, v, c: c(t, v),
-    Operators.greater_than          :   lambda t, v, c: c(v, t),
-    Operators.less_than_or_equal    :   lambda t, v, c: not c(v, t),
-    Operators.greater_than_or_equal :   lambda t, v, c: not c(t, v),
-    Operators.inside                :   lambda t, v, c: t in [str(x) for x in v],
-    Operators._not                  :   lambda t, v, c: not operator_functions[list(v)[0]](t, v[list(v)[0]], c),
-    Operators._and                  :   lambda t, v, c: not (False in [operator_functions[list(d)[0]](t, d[list(d)[0]], c) for d in v]),
-    Operators._or                   :   lambda t, v, c: True in [operator_functions[list(d)[0]](t, d[list(d)[0]], c) for d in v],
-}
 
 class Dataset:
 
@@ -56,7 +19,7 @@ class Dataset:
         elif type(field_names) is not list and type(field_names) is not tuple:
             error_message("Dataset.get_field_ids: parameter 'field_names' must be of type 'list' or 'tuple'")
             return []
-        
+
         field_ids = []
         for field in field_names:
             if not field in self.fields:
@@ -79,7 +42,7 @@ class Dataset:
         if type(field) is not str:
             error_message("Dataset.already_indexed: parameter 'field' must be of type 'str'")
             return self
-        
+
         self.indexed_field = field
         self.indexed_comparison = comparison
         return self
@@ -98,28 +61,28 @@ class Dataset:
         def quick_sort(field, low, high, comparison): 
             if low < high: 
                 p = partition(field, low, high, comparison)
-        
+
                 quick_sort(field, low, p-1, comparison)
                 quick_sort(field, p+1, high, comparison)
-        
+
         def partition(field, low, high, comparison):
             i = low-1
             pivot = self.data[high][field]
-        
+
             for j in range(low, high):
                 if comparison(self.data[j][field], pivot):
                     i = i+1
                     self.data[i], self.data[j] = self.data[j], self.data[i]
-            
+
             self.data[i+1], self.data[high] = self.data[high], self.data[i+1]
 
             return i+1
-        
+
         sys.setrecursionlimit(10000)
         quick_sort(self.fields.index(field), 0, len(self.data)-1, comparison)
         self.indexed_field = field
         self.indexed_comparison = comparison
-        
+
         return self
 
     def query(self, filter_object=None):
@@ -160,7 +123,7 @@ class Dataset:
                             comparison_1 = lambda a : self.indexed_comparison(a, value)
                         else:
                             comparison_1 = lambda a : self.indexed_comparison(value, a)
-                        
+
                         if comparator[1]:
                             comparison_2 = lambda a : not comparison_1(a)
                         else:
@@ -189,12 +152,12 @@ class Dataset:
             if(high_edge < low_edge or high_edge >= len(self.data) or low_edge < 0):
                 error_message("Dataset.query.double_binary_search: Invalid high/low bounds, returning empty dataset")
                 return []
-            
+
             if low_edge == high_edge:
                 return [self.data[low_edge]]
 
             return self.data[low_edge:high_edge]
-        
+
 
         result_data = []
 
@@ -239,7 +202,7 @@ class Dataset:
 
                 if i in deletions:
                     break
-        
+
         for i in reversed(range(len(deletions))):
             del result_data[deletions[i]]
 
@@ -278,7 +241,7 @@ class Dataset:
     def select_as(self, field_names=None):
         if field_names == None:
             field_names = {}
-        
+
         dataset = self.select(list(field_names)).rename_fields(field_names)
 
         if not dataset.indexed_field in dataset.fields:
@@ -299,7 +262,7 @@ class Dataset:
                 occurences.append(row[0])
         for i in reversed(range(len(deletions))):
             del selection.data[deletions[i]]
-        
+
         return selection
 
     def add_field(self, field, derivation=lambda r:""):
@@ -397,7 +360,7 @@ class Dataset:
                     break
             if not null:
                 n += 1
-        
+
         return n
 
     def sum(self, field_name=None):
@@ -425,7 +388,7 @@ class Dataset:
             title_width = len(field)
             if(title_width > max_width):
                 max_width = title_width
-            
+
             column_widths.append(max_width)
 
         def print_bar(c="-"):
@@ -433,7 +396,7 @@ class Dataset:
             for i in range(len(self.fields)):
                 print("".rjust(column_widths[i]+2, c), end="+")
             print()
-        
+
         def print_row(row, title):
             if title:
                 print_bar("=")
@@ -450,7 +413,7 @@ class Dataset:
                 print_bar("=")
             else:
                 print_bar()
-        
+
         print()
         print_row(self.fields, True)
         for row in self.data:
@@ -463,7 +426,7 @@ class Dataset:
         if field_names != None:
             self.select(field_names).save_csv(filepath, delimiter)
             return self
-        
+
         csv_file = open(filepath, "w", newline='')
         csv_writer = csv.writer(csv_file, delimiter=delimiter)
         csv_writer.writerow(self.fields)
