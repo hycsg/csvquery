@@ -8,6 +8,10 @@ PKG_NAME="csvquery"
 source build/packaging_tools.zsh
 # -------------------------- #
 
+# ensure that package/my_pkg exists
+[ ! -d $PKG_DIR/$PKG_NAME ] &&
+  mkdir $PKG_DIR/$PKG_NAME;
+
 case "$1" in 
   dryrun)
     update_pkg_dir $PROJ_DIR $PKG_DIR
