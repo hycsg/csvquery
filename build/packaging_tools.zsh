@@ -16,6 +16,9 @@ function update_pkg_dir() {
   return 0;
 }
 
+# clean <package_dir> <package_name>
+#  0 --> success
+# -1 --> not enough arguments supplied
 function clean() {
   ([ -z $1 ] || [ -z $2 ]) &&
     return -1;
@@ -36,7 +39,7 @@ function clean() {
 
 # publish_package <package_folder>
 #  0 --> success
-# -1 --> not enough args supplied
+# -1 --> not enough arguments supplied
 function publish_pkg() {
   [ -z $1 ] &&
     return -1;
