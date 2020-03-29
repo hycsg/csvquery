@@ -473,6 +473,8 @@ class Dataset:
         return self
 
 def parse_csv(iterator, delimiter=","):
+    if type(iterator) is str:
+        iterator = iterator.split("\n")
     dataset = Dataset()
     csv_reader = csv.reader(iterator, delimiter=delimiter)
     for line, row in enumerate(csv_reader):
