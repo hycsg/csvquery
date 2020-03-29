@@ -1,6 +1,6 @@
 # csvquery
 
-A versatile python package that allows you to execute MongoDB-style queries on CSV files and interact with them like SQL tables.
+A versatile Python package that allows you to execute MongoDB-style queries on CSV files and interact with them like SQL tables.
 
 ## Downloading
 
@@ -176,7 +176,7 @@ from csvquery import Operators
 
 voters_named_john = voter_dataset.query({
     "name": {
-        Operators.eq : "John"
+        Operators.equal : "John"
     }
 })
 ```

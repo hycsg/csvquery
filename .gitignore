@@ -4,7 +4,8 @@ architecture.svg
 __pycache__
 *.bat
 *.egg-info
-build
-dist
+package/dist
+package/build
+package/csvquery/*
 package/README.md
-package/csvquery/csvquery.py
+package/LICENSE
