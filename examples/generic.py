@@ -1,9 +1,6 @@
 from csvquery import *
 
-def print_diversity_info():
-    dataset = open_csv("data/census_diversity.csv", ";")
-    dataset.index("asian_nh")
-    dataset.print_table(dataset.column_names[2:])
+today = "2020-03-23"
 
 def stats():
     dataset = open_csv("data/coronavirus_data.csv")
@@ -29,7 +26,12 @@ def rename():
 
 def no_new_zealand():
     (
-    open_csv("datafilter_object.csv")
+    open_csv("data/coronavirus_data.csv")
         .query({"location":{"neq":"New Zealand"}})
         .save_csv("output.csv")
     )
+
+stats()
+# select_as()
+# rename()
+# no_new_zealand()

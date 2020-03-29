@@ -23,3 +23,5 @@ def join_tables():
     )
     
     contacts.join(addresses, "location_id").print_table()
+
+join_tables()

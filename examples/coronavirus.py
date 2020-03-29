@@ -1,4 +1,8 @@
 from csvquery import *
+from datetime import datetime
+import math
+
+today = "2020-03-23"
 
 def usa_cases_date_range():
     dataset = open_csv("data/coronavirus_data.csv")
@@ -54,7 +58,7 @@ def usa_or_uk():
         },
         "date": {
             Operators.greater_than_or_equal: "2020-03-01",
-            Operators.less_than_or_equal: "2020-03-2",
+            Operators.less_than_or_equal: "2020-03-05",
             Operators.comparison: Comparisons.get_date_comparison("%Y-%m-%d")
         }
     })
@@ -85,3 +89,11 @@ def country_count():
     data = open_csv("data/coronavirus_data.csv")
     countries = data.select_unique("location")
     print(countries.count())
+
+usa_cases_date_range()
+# usa_cases_today()
+# more_than_1000_cases_today()
+# usa_or_uk()
+# short_date()
+# new_column()
+# country_count()
